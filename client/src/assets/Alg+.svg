@@ -1,0 +1,10 @@
+<svg version="1.2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48">
+	<style>
+		.s0 { fill: #e5e5e7 } 
+		.s1 { fill: #2d3354 } 
+		.s2 { paint-order:stroke fill markers;stroke: #2d3354;stroke-width: 4;stroke-linejoin: round;;fill: #e5e5e7 } 
+	</style>
+	<path id="Alg+" class="s0" aria-label="Alg+"  d="m4.6 18.1v3.7h4.5v-3.7h-0.9v-0.9h-0.9v-0.9h-0.9v0.9h-0.9v0.9zm4.5 11.9v-4.6h-4.5v4.6h-3.7v-13.7h0.9v-0.9h0.9v-0.9h1v-0.9h0.9v-0.9h0.9v-0.9h2.7v0.9h0.9v0.9h0.9v0.9h1v0.9h0.9v0.9h0.9v13.7zm6.8 0v-18.2h3.6v18.2zm13.3-3.6v-1h0.9v-6.3h-3.6v0.9h-0.9v5.4h0.9v1zm-7.3 5.4v-1.8h3.6v0.9h0.9v0.9h2.8v-0.9h0.9v-2.7h-0.9v0.9h-4.6v-0.9h-1.8v-1.8h-0.9v-7.3h0.9v-1.9h1.8v-0.9h9.1v15.5h-0.9v1.8h-1.8v1h-6.4v-1h-1.8v-1.8z"/>
+	<path id="Alg+" class="s1" aria-label="Alg+"  d="m36.9 22.7v-2.7h4.6v-4.6h2.7v4.6h4.6v2.7h-4.6v4.6h-2.7v-4.6z"/>
+	<path id="Alg" class="s2" aria-label="Alg"  d="m4.6 18.1v3.7h4.5v-3.7h-0.9v-0.9h-0.9v-0.9h-0.9v0.9h-0.9v0.9zm4.5 11.9v-4.6h-4.5v4.6h-3.7v-13.7h0.9v-0.9h0.9v-0.9h1v-0.9h0.9v-0.9h0.9v-0.9h2.7v0.9h0.9v0.9h0.9v0.9h1v0.9h0.9v0.9h0.9v13.7zm6.8 0v-18.2h3.6v18.2zm13.3-3.6v-1h0.9v-6.3h-3.6v0.9h-0.9v5.4h0.9v1zm-7.3 5.4v-1.8h3.6v0.9h0.9v0.9h2.8v-0.9h0.9v-2.7h-0.9v0.9h-4.6v-0.9h-1.8v-1.8h-0.9v-7.3h0.9v-1.9h1.8v-0.9h9.1v15.5h-0.9v1.8h-1.8v1h-6.4v-1h-1.8v-1.8z"/>
+</svg>

@@ -1,0 +1,15 @@
+{
+  "name": "algoritmas-root",
+  "version": "1.0.0",
+  "scripts": {
+    "server": "npm run start --prefix server",
+    "client": "npm run dev --prefix client",
+    "dev": "concurrently \"npm run server\" \"npm run client\""
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  },
+  "dependencies": {
+    "nodemailer": "^8.0.5"
+  }
+}
