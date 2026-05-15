@@ -7,11 +7,19 @@ export class Environment {
 
     // --- GESTIÓN BÁSICA ---
     
+    define(name, value) {
+        this.variables.set(name, value);
+    }
+
     set(name, value) {
+        this.define(name, value);
+    }
+
+    assign(name, value) {
         if (this.variables.has(name)) {
             this.variables.set(name, value);
         } else if (this.parent) {
-            this.parent.set(name, value);
+            this.parent.assign(name, value);
         } else {
             this.variables.set(name, value);
         }
@@ -25,6 +33,16 @@ export class Environment {
             return this.parent.get(name);
         }
         throw new Error(`Variable '${name}' no definida.`);
+    }
+
+    has(name) {
+        if (this.variables.has(name)) {
+            return true;
+        }
+        if (this.parent) {
+            return this.parent.has(name);
+        }
+        return false;
     }
 
     // --- VECTORES (Base 1 de Algorit+) ---

@@ -318,16 +318,11 @@ if (this.match('KEYWORD', 'En caso')) {
    parseAccess(initialExpr = null) {
     let expr = initialExpr || this.primary();
 
-    let hasArrayAccess = false;
     while (true) {
         if (this.match('PUNCTUATION', '[')) {
-            if (hasArrayAccess) {
-                throw this.error(this.peek(), "Solo el registro principal puede llevar índice de arreglo. Los subregistros no pueden tener índices adicionales.");
-            }
             const index = this.expression();
             this.consume('PUNCTUATION', "Se esperaba ']'", ']');
             expr = { type: 'ArrayAccess', object: expr, index };
-            hasArrayAccess = true;
         } else if (this.match('PUNCTUATION', '.')) {
             const property = this.consume('IDENTIFIER', "Se esperaba campo").value;
             expr = { type: 'MemberAccess', object: expr, property };
@@ -438,37 +433,38 @@ varDeclaration() {
     const vars = [];
     // Procesamos la línea de declaración hasta el ';'
     do {
-        // 1. Primero el IDENTIFICADOR (el nombre de la variable)
         const nameToken = this.consume('IDENTIFIER', "Se esperaba el nombre de la variable");
-        
-        let size = null;
-        // Soporte para arreglos pegados al nombre: nombre[tamaño]
-        if (this.match('PUNCTUATION', '[')) {
-            size = this.consume('NUMBER', "Se esperaba tamaño del arreglo").value;
+
+        const sizes = [];
+        // Soporte para arreglos pegados al nombre: nombre[tamaño][tamaño]
+        while (this.match('PUNCTUATION', '[')) {
+            sizes.push(this.consume('NUMBER', "Se esperaba tamaño del arreglo").value);
             this.consume('PUNCTUATION', "Se esperaba ']'", ']');
         }
 
-        // 2. Luego los DOS PUNTOS ':'
         this.consume('PUNCTUATION', "Se esperaba ':' después del nombre", ':');
 
-        // 3. Finalmente el TIPO (entero, cadena, etc.)
         const typeToken = this.consumeType();
 
-        // Soporte para arreglos definidos en el tipo: nombre: Tipo[tamaño]
-        let typeSize = null;
-        if (this.match('PUNCTUATION', '[')) {
-            typeSize = this.consume('NUMBER', "Se esperaba tamaño del arreglo").value;
+        const typeSizes = [];
+        // Soporte para arreglos definidos en el tipo: nombre: Tipo[tamaño][tamaño]
+        while (this.match('PUNCTUATION', '[')) {
+            typeSizes.push(this.consume('NUMBER', "Se esperaba tamaño del arreglo").value);
             this.consume('PUNCTUATION', "Se esperaba ']'", ']');
         }
 
-        if (size !== null && typeSize !== null && size !== typeSize) {
-            throw this.error(this.peek(), "El tamaño del arreglo debe ser consistente en la variable y el tipo");
+        if (sizes.length > 0 && typeSizes.length > 0) {
+            if (sizes.length !== typeSizes.length || sizes.some((value, index) => value !== typeSizes[index])) {
+                throw this.error(this.peek(), "Los tamaños del arreglo deben ser consistentes en la variable y el tipo");
+            }
         }
+
+        const resolvedSizes = sizes.length > 0 ? sizes : typeSizes.length > 0 ? typeSizes : null;
 
         vars.push({ 
             name: nameToken.value, 
             type: typeToken.value, 
-            size: size !== null ? size : typeSize 
+            size: resolvedSizes 
         });
 
     } while (this.match('PUNCTUATION', ',')); // Soporte para: Var a:entero, b:cadena;
@@ -493,18 +489,19 @@ subAlgorithmDeclaration() {
                 params.push({ name: this.getParamLocalName(paramNode), target: paramNode, mode: 'E' });
             } while (this.match('PUNCTUATION', ','));
         } else {
-            do {
+            while (!this.check('PUNCTUATION', ')') && !this.isAtEnd()) {
                 const mode = this.parseParamMode();
                 this.consume('PUNCTUATION', "Se esperaba ':'", ':');
 
-                while (true) {
+                do {
                     const paramNode = this.parseAccess();
                     params.push({ name: this.getParamLocalName(paramNode), target: paramNode, mode });
-                    if (!this.check('PUNCTUATION', ',')) break;
-                    if (this.isParamLabelToken(this.current + 1)) break;
+                } while (this.match('PUNCTUATION', ',') && !this.isParamLabelToken(this.current));
+
+                if (this.check('PUNCTUATION', ',') && this.isParamLabelToken(this.current + 1)) {
                     this.advance();
                 }
-            } while (this.match('PUNCTUATION', ','));
+            }
         }
     }
     this.consume('PUNCTUATION', "Se esperaba ')'", ')');

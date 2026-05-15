@@ -2,7 +2,7 @@ import { Lexer } from '../engine/lexer';
 import { Parser } from '../engine/parser';
 import { Interpreter } from '../engine/interpreter';
 import { useRef } from 'react';
-export const useAlgorit = (onPrint, onReadRequest, onError) => {
+export const useAlgorit = (onPrint, onReadRequest, onError, onVariablesUpdate) => {
     
 
     const interpreterRef = useRef(null);
@@ -23,6 +23,11 @@ export const useAlgorit = (onPrint, onReadRequest, onError) => {
             interpreterRef.current = new Interpreter(onPrint, onReadRequest, onError); 
             await interpreterRef.current.run(ast);
 
+            // Después de ejecutar, obtener las variables y llamar al callback
+            if (onVariablesUpdate && interpreterRef.current) {
+                const variables = interpreterRef.current.getCurrentVariables();
+                onVariablesUpdate(variables);
+            }
             
             return { error: false };
 
@@ -35,7 +40,7 @@ export const useAlgorit = (onPrint, onReadRequest, onError) => {
         }
     };
 
-    // Esta función la llamarás desde tu componente de React cuando el usuario presione Enter en el input
+
   const sendInputToInterpreter = (value) => {
         if (interpreterRef.current) {
             interpreterRef.current.provideInput(value); 

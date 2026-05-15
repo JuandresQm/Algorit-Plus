@@ -5,7 +5,7 @@ export const TokenType = {
     STRING: 'STRING',
     OPERATOR: 'OPERATOR',
     PUNCTUATION: 'PUNCTUATION',
-    BOOLEAN: 'BOOLEAN', // <-- Añadido para que coincida con tu Parser
+    BOOLEAN: 'BOOLEAN',
     EOF: 'EOF'
 };
 
