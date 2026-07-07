@@ -485,8 +485,13 @@ subAlgorithmDeclaration() {
     if (!this.check('PUNCTUATION', ')')) {
         if (isFunction) {
             do {
-                const paramNode = this.parseAccess();
-                params.push({ name: this.getParamLocalName(paramNode), target: paramNode, mode: 'E' });
+                const paramName = this.consume('IDENTIFIER', "Se esperaba nombre del parámetro").value;
+                let paramType = null;
+                if (this.match('PUNCTUATION', ':')) {
+                    const typeToken = this.consumeType();
+                    paramType = typeToken.value;
+                }
+                params.push({ name: paramName, type: paramType, mode: 'E' });
             } while (this.match('PUNCTUATION', ','));
         } else {
             while (!this.check('PUNCTUATION', ')') && !this.isAtEnd()) {
@@ -505,6 +510,13 @@ subAlgorithmDeclaration() {
         }
     }
     this.consume('PUNCTUATION', "Se esperaba ')'", ')');
+
+    let returnType = null;
+    if (isFunction && this.match('PUNCTUATION', ':')) {
+        const returnTypeToken = this.consumeType();
+        returnType = returnTypeToken.value;
+    }
+
     this.consume('PUNCTUATION', "Se esperaba ';'", ';');
 
     this.consume('KEYWORD', "Se esperaba 'Inicio'", 'Inicio');
@@ -530,7 +542,7 @@ subAlgorithmDeclaration() {
         throw this.error(this.peek(), `La función '${name}' debe finalizar con Devolver`);
     }
 
-    return { type: 'SubAlgorithm', name, params, body, isFunction };
+    return { type: 'SubAlgorithm', name, params, body, isFunction, returnType };
 }
 }
 export { Parser };

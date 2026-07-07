@@ -16,7 +16,7 @@ class Interpreter {
         this.recordTemplates = new Map();
         this.variableDefinitions = new Map();
         this.maxSteps = options.maxSteps ?? 20000;
-        this.maxTimeMs = options.maxTimeMs ?? 10000;
+        this.maxTimeMs = options.maxTimeMs ?? 1000;
         this.steps = 0;
         this.startTime = null;
     }
@@ -24,6 +24,27 @@ class Interpreter {
     resetExecutionLimits() {
         this.steps = 0;
         this.startTime = Date.now();
+        this.pausedTimeMs = 0;
+        this.pauseStart = null;
+    }
+
+    getElapsedExecutionTime() {
+        const now = Date.now();
+        const pausedMs = this.pauseStart ? this.pausedTimeMs + (now - this.pauseStart) : this.pausedTimeMs;
+        return now - this.startTime - pausedMs;
+    }
+
+    pauseExecutionTimer() {
+        if (!this.pauseStart) {
+            this.pauseStart = Date.now();
+        }
+    }
+
+    resumeExecutionTimer() {
+        if (this.pauseStart) {
+            this.pausedTimeMs += Date.now() - this.pauseStart;
+            this.pauseStart = null;
+        }
     }
 
     checkExecutionLimits(node) {
@@ -33,7 +54,7 @@ class Interpreter {
             throw new Error(`Límite de ejecución alcanzado: posible bucle infinito o programa demasiado largo en línea ${line}`);
         }
 
-        if (Date.now() - this.startTime > this.maxTimeMs) {
+        if (this.getElapsedExecutionTime() > this.maxTimeMs) {
             const line = node?.line || node?.token?.line || 1;
             throw new Error(`Tiempo de ejecución excedido: posible bucle infinito o bloqueo en línea ${line}`);
         }
@@ -278,11 +299,13 @@ case 'SubAlgorithm': {
     // --- SISTEMA DE LECTURA ---
 async executeRead(node) {
     const targetName = this.getTargetName(node.target);
-    this.onReadRequest(targetName); 
+    this.onReadRequest(targetName);
 
+    this.pauseExecutionTimer();
     const userInput = await new Promise(resolve => {
-        this.resolveInput = resolve; 
+        this.resolveInput = resolve;
     });
+    this.resumeExecutionTimer();
     
     const castedValue = this.castValue(userInput);
     await this.assignValue(node.target, castedValue);

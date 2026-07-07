@@ -10,7 +10,7 @@ function Login({ setUser }) {
 
     const colors = {
         primary: '#2D3354',
-        background: '#E5E5E7',
+        background: '#F0F2F5',
         textSecondary: '#666666',
         inputBg: '#F0F2F5'
     };
@@ -36,14 +36,19 @@ const handleSubmit = async (e) => {
               text: "Credenciales incorrectas",
               icon: 'error',
               confirmButtonText: 'Reintentar',
-              confirmButtonColor: '#2D3354', 
-    background: '#E5E5E7'
+              confirmButtonColor: '#2D3354',
+              background: '#E5E5E7',
+              didOpen: (popup) => {
+                popup.style.boxShadow = '0 6px 0 #e5e5e5';
+                popup.style.border = '2px solid #e5e5e5';
+                popup.style.borderRadius = '16px';
+                popup.style.fontFamily = '"Jersey 20", sans-serif';
+              }
             });
     }
 };
 
 
-  // Lógica Responsive para el Logo
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
   useEffect(() => {
@@ -117,7 +122,6 @@ const handleSubmit = async (e) => {
                     <div style={styles.inputGroup}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <label style={styles.label}>Contraseña</label>
-                            <Link to="/recuperar" style={styles.forgotPass}>¿Olvidaste la contraseña?</Link>
                         </div>
                         <div style={styles.inputWrapper}>
                             <Lock size={18} style={styles.icon} color={colors.textSecondary} />
@@ -138,6 +142,7 @@ const handleSubmit = async (e) => {
                                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                             </button>
                         </div>
+
                     </div>
 
                 
@@ -150,6 +155,13 @@ const handleSubmit = async (e) => {
                 <p style={styles.footerText}>
                     ¿No tienes una cuenta? <Link to="/registro" style={styles.link(colors.primary)}>Regístrate</Link>
                 </p>
+                <div style={{ marginTop: '10px' }}>
+<Link to="/recuperar" style={styles.footerText}>
+                    ¿Olvidaste la contraseña?
+                </Link>
+                </div>
+                
+
             </div>
         </div>
         </div>
@@ -164,20 +176,20 @@ const styles = {
     card: {
         backgroundColor: '#fff', padding: '40px', borderRadius: '20px',
         boxShadow: '0 10px 30px rgba(0,0,0,0.1)', width: '100%', maxWidth: '450px',
-        textAlign: 'center'
+        textAlign: 'center', boxShadow: '0 4px 0 #e5e5e5', border: '2px solid #e5e5e5',
+    borderRadius: '16px' 
     },
     form: { textAlign: 'left' },
     inputGroup: { marginBottom: '20px' },
-    label: { display: 'block', fontSize: '14px', fontWeight: 'bold', marginBottom: '8px', color: '#333' },
-    forgotPass: { fontSize: '12px', color: '#999', textDecoration: 'none', marginBottom: '8px' },
-    inputWrapper: {
+    label: { display: 'block', fontSize: '16px', fontWeight: 'bold', marginBottom: '8px', color: '#333' },
+        inputWrapper: {
         display: 'flex', alignItems: 'center', backgroundColor: '#F0F2F5',
         borderRadius: '8px', padding: '0 12px'
     },
     icon: { marginRight: '10px' },
     input: {
         width: '100%', padding: '12px 0', backgroundColor: 'transparent',
-        border: 'none', outline: 'none', fontSize: '14px'
+        border: 'none', outline: 'none', fontSize: '16px'
     },
     eyeButton: { background: 'none', border: 'none', cursor: 'pointer', color: '#666' },
     submitBtn: (color) => ({
@@ -185,7 +197,7 @@ const styles = {
         border: 'none', borderRadius: '8px', fontSize: '16px', fontWeight: 'bold',
         cursor: 'pointer', boxShadow: '0 4px 12px rgba(45, 51, 84, 0.3)'
     }),
-    footerText: { marginTop: '25px', fontSize: '14px', color: '#666' },
+    footerText: { marginTop: '25px', fontSize: '16px', color: '#666', textDecoration: 'none' },
     link: (color) => ({ color: color, fontWeight: 'bold', textDecoration: 'none' })
 };
 

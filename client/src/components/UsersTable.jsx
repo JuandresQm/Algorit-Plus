@@ -48,10 +48,24 @@ const UsersTable = ({ colors }) => {
                 { rol: newRole },
                 { headers: { 'Authorization': `Bearer ${token}` } }
             );
-            Swal.fire('¡Éxito!', `Rol actualizado a ${newRole}`, 'success');
-            setUsers(users.map(user => user.id === userId ? { ...user, rol: newRole } : user));
+Swal.fire({
+  title: '¡Éxito!',
+  text: `Rol actualizado a ${newRole}`,
+  icon: 'success',
+  confirmButtonColor: '#2D3354', didOpen: (popup) => {
+    popup.style.boxShadow = '0 6px 0 #e5e5e5';
+    popup.style.border = '2px solid #e5e5e5';
+    popup.style.borderRadius = '16px';
+    popup.style.fontFamily = '"Jersey 20", sans-serif';
+  }
+});            setUsers(users.map(user => user.id === userId ? { ...user, rol: newRole } : user));
         } catch (error) {
-            Swal.fire('Error', 'No se pudo actualizar el rol', error.message);
+            Swal.fire({
+                title: 'Error',
+                text: 'No se pudo actualizar el rol',
+                icon: 'error',
+                confirmButtonColor: '#2D3354'
+            });
         }
     };
 

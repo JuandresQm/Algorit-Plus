@@ -50,9 +50,9 @@ tokenize() {
         const startLine = this.line;
 
         // 1. IDENTIFICADORES, PALABRAS RESERVADAS Y OPERADORES DE TEXTO
-        if (/[a-zA-Z_]/.test(char)) {
+        if (/^[\p{L}_]/u.test(char)) {
             let text = '';
-            while (/[a-zA-Z0-9_]/.test(this.peek())) text += this.advance();
+            while (/^[\p{L}0-9_]/u.test(this.peek())) text += this.advance();
 
             // --- LÓGICA ESPECIAL PARA PALABRAS COMPUESTAS (En caso, Otro Caso) ---
             if (text === 'En' || text === 'Otro') {

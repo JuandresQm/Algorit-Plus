@@ -61,7 +61,13 @@ const confirmLogout = () => {
         confirmButtonColor: '#2D3354', 
         cancelButtonColor: 'rgb(184, 5, 5)',
         confirmButtonText: 'Sí, cerrar sesión',
-        cancelButtonText: 'Cancelar'
+        cancelButtonText: 'Cancelar',
+        didOpen: (popup) => {
+    popup.style.boxShadow = '0 6px 0 #e5e5e5';
+    popup.style.border = '2px solid #e5e5e5';
+    popup.style.borderRadius = '16px';
+    popup.style.fontFamily = '"Jersey 20", sans-serif';
+  }
       }).then((result) => {
         if (result.isConfirmed) {
           const logId = localStorage.getItem('logId');

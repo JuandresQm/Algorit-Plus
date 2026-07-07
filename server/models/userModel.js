@@ -46,6 +46,30 @@ const User = sequelize.define('User', {
       isIn: [['usuario', 'admin', 'docente']]
     }
   },
+  avatar: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    defaultValue: '/uploads/avatars/avatar-3-1780707496367.jpg'
+  },
+  streakCount: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    defaultValue: 0
+  },
+  lastActionDate: {
+    type: DataTypes.DATEONLY,
+    allowNull: true
+  },
+  exp: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    defaultValue: 0
+  },
+  nivel: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    defaultValue: 1
+  },
   password: {
     type: DataTypes.STRING,
     allowNull: false,

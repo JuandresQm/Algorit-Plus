@@ -50,7 +50,13 @@ function Home({ user, onLogout }) {
         confirmButtonColor: '#2D3354', 
         cancelButtonColor: 'rgb(184, 5, 5)',
         confirmButtonText: 'Sí, cerrar sesión',
-        cancelButtonText: 'Cancelar'
+        cancelButtonText: 'Cancelar',
+        didOpen: (popup) => {
+    popup.style.boxShadow = '0 6px 0 #e5e5e5';
+    popup.style.border = '2px solid #e5e5e5';
+    popup.style.borderRadius = '16px';
+    popup.style.fontFamily = '"Jersey 20", sans-serif';
+  }
       }).then((result) => {
         if (result.isConfirmed) {
           const logId = localStorage.getItem('logId');
@@ -76,6 +82,8 @@ const handleStartClick = () => {
             navigate('/acceso');
         } else if (user.rol === 'admin') {
             navigate('/admin');
+         } else if (user.rol === 'docente') {
+            navigate('/docente');
         } else {
             navigate('/inicio');
         }
@@ -195,7 +203,7 @@ const handleStartClick = () => {
         />
         <FeatureCard 
           icon={<img src={medal} alt="" style={{ width: '80px' }} />}
-          title="Desafíos y logros" 
+          title="Actividades y logros" 
           color={colors.primary} 
         />
       </section>
@@ -214,7 +222,9 @@ function FeatureCard({ icon, title, color }) {
       borderRadius: '15px', 
       boxShadow: '0 10px 25px rgba(0, 0, 0, 0.08)', 
       border: '1px solid #f0f0f0',
-      transition: 'transform 0.3s ease'
+      transition: 'transform 0.3s ease',
+       boxShadow: '0 4px 0 #e5e5e5', border: '2px solid #e5e5e5',
+    borderRadius: '16px'
     }}>
       <div style={{ fontSize: '3.5rem', marginBottom: '20px' }}>{icon}</div>
       <h3 style={{ 

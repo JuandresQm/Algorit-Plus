@@ -11,7 +11,7 @@ function Recuperacion() {
 
     const colors = {
         primary: '#2D3354',
-        background: '#E5E5E7',
+        background: '#F0F2F5',
         textSecondary: '#666666',
         inputBg: '#F0F2F5'
     };
@@ -28,7 +28,12 @@ function Recuperacion() {
                     title: 'Correo enviado',
                     text: 'Si los datos son correctos, recibirás un enlace de recuperación en breve.',
                     icon: 'success',
-                    confirmButtonColor: colors.primary
+                    confirmButtonColor: colors.primary, didOpen: (popup) => {
+    popup.style.boxShadow = '0 6px 0 #e5e5e5';
+    popup.style.border = '2px solid #e5e5e5';
+    popup.style.borderRadius = '16px';
+    popup.style.fontFamily = '"Jersey 20", sans-serif';
+  }
                 }).then(() => {
                     navigate('/acceso');
                 });
@@ -69,13 +74,13 @@ function Recuperacion() {
             <div style={styles.container}>
                 <div style={styles.card}>
                     <div style={{ textAlign: 'left', marginBottom: '20px' }}>
-                        <Link to="/acceso" style={{ display: 'flex', alignItems: 'center', gap: '5px', textDecoration: 'none', color: colors.primary, fontSize: '14px', fontWeight: 'bold' }}>
+                        <Link to="/acceso" style={{ display: 'flex', alignItems: 'center', gap: '5px', textDecoration: 'none', color: colors.primary, fontSize: '16px', fontWeight: 'bold' }}>
                             <ArrowLeft size={16} /> Volver al login
                         </Link>
                     </div>
 
                     <h2 style={{ color: colors.primary, marginBottom: '10px' }}>Recuperar cuenta</h2>
-                    <p style={{ color: colors.textSecondary, marginBottom: '25px', fontSize: '14px' }}>
+                    <p style={{ color: colors.textSecondary, marginBottom: '25px', fontSize: '16px' }}>
                         Ingresa tu usuario o el correo electrónico asociado a tu cuenta para enviarte un enlace de recuperación.
                     </p>
 
@@ -106,8 +111,8 @@ function Recuperacion() {
                     </form>
 
                     <div style={{ marginTop: '20px', padding: '15px', backgroundColor: '#F8F9FA', borderRadius: '10px' }}>
-                        <p style={{ fontSize: '12px', color: colors.textSecondary, margin: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                            <Mail size={14} /> El enlace expirará en 15 minutos.
+                        <p style={{ fontSize: '16px ', color: colors.textSecondary, margin: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                            <Mail size={16} /> El enlace expirará en 15 minutos.
                         </p>
                     </div>
                 </div>
@@ -136,7 +141,8 @@ const styles = {
     card: {
         backgroundColor: '#fff', padding: '40px', borderRadius: '20px',
         boxShadow: '0 10px 30px rgba(0,0,0,0.1)', width: '100%', maxWidth: '450px',
-        textAlign: 'center'
+        textAlign: 'center', boxShadow: '0 4px 0 #e5e5e5', border: '2px solid #e5e5e5',
+    borderRadius: '16px' 
     },
     form: { textAlign: 'left' },
     inputGroup: { marginBottom: '20px' },
@@ -148,10 +154,10 @@ const styles = {
     icon: { marginRight: '10px' },
     input: {
         width: '100%', padding: '12px 0', backgroundColor: 'transparent',
-        border: 'none', outline: 'none', fontSize: '14px'
+        border: 'none', outline: 'none', fontSize: '16px'
     },
     submitBtn: (color, loading) => ({
-        width: '100%', padding: '14px', backgroundColor: loading ? '#ccc' : color, color: 'white',
+        width: '100%', padding: '16px', backgroundColor: loading ? '#ccc' : color, color: 'white',
         border: 'none', borderRadius: '8px', fontSize: '16px', fontWeight: 'bold',
         cursor: loading ? 'not-allowed' : 'pointer', boxShadow: '0 4px 12px rgba(45, 51, 84, 0.3)'
     })

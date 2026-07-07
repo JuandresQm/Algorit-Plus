@@ -1,6 +1,6 @@
 const { Op } = require('sequelize');
-const User = require('../models/userModel');
-const Log = require('../models/logModel');
+const { User, Log, Lesson, UserProgress } = require('../models');
+const { getCurrentStreak } = require('../utils/streak');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const transporter = require('../utils/mailer');
@@ -73,6 +73,7 @@ const register = async (req, res) => {
         if (!name || !lastname || !email || !username || !password) {
             return res.status(400).json({ message: "Todos los campos son obligatorios" });
         }
+
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
@@ -83,23 +84,42 @@ const register = async (req, res) => {
             username,
             password: hashedPassword
         });
-const nuevoLog = await Log.create({
-    userId: newUser.id,
-    action: 'Registro',
-    ipAddress: req.ip,
-    details: 'Registro de nuevo usuario'
-});
-await transporter.sendMail({
+
+        const firstLesson = await Lesson.findOne({ 
+            order: [['order', 'ASC']] 
+        });
+
+        if (firstLesson) {
+            await UserProgress.create({
+                userId: newUser.id,
+                lessonId: firstLesson.id,
+                completed: false,
+                score: 0,
+                completionDate: null
+            });
+        }
+
+        await Log.create({
+            userId: newUser.id,
+            action: 'Registro',
+            ipAddress: req.ip,
+            details: 'Registro de nuevo usuario'
+        });
+
+         transporter.sendMail({
             from: '"Algorit+ Soporte" <tu_correo@gmail.com>',
             to: newUser.email,
             subject: "Registro exitoso - Algorit+",
             html: `<b>Hola, ${newUser.username}</b>
                    <p>Muchas gracias por registrarte a Algorit+</p>`
-        });
-        res.status(201).json({ message: "Usuario creado con éxito", user: newUser });
+        }).catch(mailError => console.error("Error enviando email de bienvenida:", mailError));
+
+     
+        return res.status(201).json({ message: "Usuario creado con éxito", user: newUser });
+
     } catch (error) {
         console.error("ERROR EN REGISTRO:", error);
-        res.status(500).json({ message: "Error al crear usuario", error: error.message });
+        return res.status(500).json({ message: "Error al crear usuario", error: error.message });
     }
 };
 const login = async (req, res) => {
@@ -138,7 +158,15 @@ const login = async (req, res) => {
             message: "Inicio de sesión exitoso",
             token,
             logId: nuevoLog.id,
-            user: { username: user.username, rol: user.rol }
+            user: {
+              id: user.id,
+              username: user.username,
+              rol: user.rol,
+              avatar: user.avatar,
+              streakCount: user.streakCount || 0,
+              lastActionDate: user.lastActionDate || null,
+              currentStreak: getCurrentStreak(user)
+            }
         });
         
     } catch (error) {

@@ -2,7 +2,7 @@ import { Lexer } from '../engine/lexer';
 import { Parser } from '../engine/parser';
 import { Interpreter } from '../engine/interpreter';
 import { useRef } from 'react';
-export const useAlgorit = (onPrint, onReadRequest, onError, onVariablesUpdate) => {
+export const useAlgorit = (onPrint, onReadRequest, onError, onVariablesUpdate, onSubalgorithmsUpdate) => {
     
 
     const interpreterRef = useRef(null);
@@ -17,6 +17,10 @@ export const useAlgorit = (onPrint, onReadRequest, onError, onVariablesUpdate) =
 
             if (parser.errors.length > 0) {
                 throw parser.errors[0];
+            }
+
+            if (onSubalgorithmsUpdate) {
+                onSubalgorithmsUpdate(ast.subalgorithms || []);
             }
 
             // Pasamos los callbacks al instanciar el Intérprete

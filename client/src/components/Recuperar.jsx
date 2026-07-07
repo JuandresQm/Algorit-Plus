@@ -13,7 +13,7 @@ function ResetPassword() {
 
     const colors = {
         primary: '#2D3354',
-        background: '#E5E5E7',
+        background: '#F0F2F5',
         textSecondary: '#666666',
         inputBg: '#F0F2F5'
     };
@@ -38,7 +38,12 @@ function ResetPassword() {
                     title: '¡Éxito!',
                     text: 'Tu contraseña ha sido actualizada correctamente',
                     icon: 'success',
-                    confirmButtonColor: colors.primary
+                    confirmButtonColor: colors.primary, didOpen: (popup) => {
+    popup.style.boxShadow = '0 6px 0 #e5e5e5';
+    popup.style.border = '2px solid #e5e5e5';
+    popup.style.borderRadius = '16px';
+    popup.style.fontFamily = '"Jersey 20", sans-serif';
+  }
                 }).then(() => {
                     navigate('/acceso'); 
                 });
@@ -61,7 +66,7 @@ function ResetPassword() {
     }, []);
 
     return (
-        <div style={{minHeight: '100vh', fontFamily: "'Jersey 20', sans-serif", margin: 0 }}>
+        <div style={{minHeight: '100vh', fontFamily: "'Jersey 20', sans-serif", margin: 0, backgroundColor: colors.background }}>
             <nav style={navStyles(isMobile)}>
                 <div style={logoStyles(isMobile)}>
                     <Link to="/" style={{ textDecoration: 'none' }}>
@@ -76,7 +81,7 @@ function ResetPassword() {
             <div style={styles.container}>
                 <div style={styles.card}>
                     <h2 style={{ color: colors.primary, marginBottom: '10px' }}>Nueva Contraseña</h2>
-                    <p style={{ color: colors.textSecondary, marginBottom: '25px', fontSize: '14px' }}>
+                    <p style={{ color: colors.textSecondary, marginBottom: '25px', fontSize: '16px' }}>
                         Ingresa tu nueva clave de acceso para Algorit+
                     </p>
 
@@ -136,7 +141,7 @@ function ResetPassword() {
 const navStyles = (isMobile) => ({
     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
     padding: isMobile ? '10px 20px' : '10px 50px',  
-                backgroundColor: '#EEEEEE',
+                backgroundColor: '#F0F2F5',
         borderBottom: '1px solid #ccc' 
 });
 
@@ -151,13 +156,13 @@ const styles = {
         minHeight: '80vh', padding: '20px'
     },
     card: {
-        backgroundColor: '#fff', padding: '40px', borderRadius: '20px',
-        boxShadow: '0 10px 30px rgba(0,0,0,0.1)', width: '100%', maxWidth: '450px',
-        textAlign: 'center'
+        backgroundColor: '#fff', padding: '40px', width: '100%', maxWidth: '450px',
+        textAlign: 'center', boxShadow: '0 4px 0 #e5e5e5', border: '2px solid #e5e5e5',
+    borderRadius: '16px' 
     },
     form: { textAlign: 'left' },
     inputGroup: { marginBottom: '20px' },
-    label: { display: 'block', fontSize: '14px', fontWeight: 'bold', marginBottom: '8px', color: '#333' },
+    label: { display: 'block', fontSize: '16px', fontWeight: 'bold', marginBottom: '8px', color: '#333' },
     inputWrapper: {
         display: 'flex', alignItems: 'center', backgroundColor: '#F0F2F5',
         borderRadius: '8px', padding: '0 12px'
@@ -165,7 +170,7 @@ const styles = {
     icon: { marginRight: '10px' },
     input: {
         width: '100%', padding: '12px 0', backgroundColor: 'transparent',
-        border: 'none', outline: 'none', fontSize: '14px'
+        border: 'none', outline: 'none', fontSize: '16px'
     },
     eyeButton: { background: 'none', border: 'none', cursor: 'pointer', color: '#666' },
     submitBtn: (color) => ({
@@ -173,7 +178,7 @@ const styles = {
         border: 'none', borderRadius: '8px', fontSize: '16px', fontWeight: 'bold',
         cursor: 'pointer', boxShadow: '0 4px 12px rgba(45, 51, 84, 0.3)'
     }),
-    footerText: { marginTop: '25px', fontSize: '14px', color: '#666' },
+    footerText: { marginTop: '25px', fontSize: '16px', color: '#666' },
     link: (color) => ({ color: color, fontWeight: 'bold', textDecoration: 'none' })
 };
 

@@ -10,6 +10,6 @@ const Lesson = sequelize.define('Lesson', {
     type: DataTypes.INTEGER,
     references: { model: 'Materias', key: 'id' }
   }
-}, { tableName: 'lessons' });
+}, { tableName: 'lessons' },);
 
 module.exports = Lesson;

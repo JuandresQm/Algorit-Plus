@@ -13,7 +13,16 @@ const UserProgress = sequelize.define('UserProgress', {
   },
   completed: { type: DataTypes.BOOLEAN, defaultValue: true },
   score: { type: DataTypes.INTEGER, defaultValue: 0 },
+  currentPage: { type: DataTypes.INTEGER, defaultValue: 1 },
+  totalTimeSeconds: { type: DataTypes.INTEGER, defaultValue: 0 },
   completionDate: { type: DataTypes.DATE, defaultValue: DataTypes.NOW }
-}, { tableName: 'user_progress' });
+}, { tableName: 'user_progress',
+  indexes: [
+    {
+      unique: true,
+      fields: ['userId', 'lessonId']
+    }
+  ]
+ });
 
 module.exports = UserProgress;

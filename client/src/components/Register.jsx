@@ -14,7 +14,7 @@ function Register() {
 
     const colors = {
         primary: '#2D3354',
-        background: '#E5E5E7',
+        background: '#F0F2F5',
         white: '#E5E5E7',
         inputBg: '#F0F2F5',
         textSecondary: '#666666'
@@ -31,7 +31,12 @@ function Register() {
                     text: "Tu cuenta ha sido creada. ¡Inicia sesión para comenzar!",
                     icon: 'success',
                     confirmButtonText: 'Continuar',
-                    confirmButtonColor: '#2D3354'
+                    confirmButtonColor: '#2D3354', didOpen: (popup) => {
+    popup.style.boxShadow = '0 6px 0 #e5e5e5';
+    popup.style.border = '2px solid #e5e5e5';
+    popup.style.borderRadius = '16px';
+    popup.style.fontFamily = '"Jersey 20", sans-serif';
+  }
                 });
 
             }
@@ -217,7 +222,7 @@ const styles = {
         alignItems: 'center',
         minHeight: '100vh',
         padding: '20px',
-        marginTop: '-80px'
+        marginTop: '-50px'
     },
     card: {
         backgroundColor: '#fff',
@@ -226,7 +231,8 @@ const styles = {
         boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
         width: '100%',
         maxWidth: '500px',
-        textAlign: 'center'
+        textAlign: 'center', boxShadow: '0 4px 0 #e5e5e5', border: '2px solid #e5e5e5',
+    borderRadius: '16px' 
     },
     subtitle: { color: '#666', marginBottom: '15px', fontSize: '16px' },
     googleBtn: {
