@@ -4,7 +4,6 @@ const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const morgan = require('morgan');
 const sequelize = require('./config/db.js');
-const { Materia, Lesson } = require('./models');
 const authRoutes = require('./routes/authRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const progressRoutes = require('./routes/progressRoutes');

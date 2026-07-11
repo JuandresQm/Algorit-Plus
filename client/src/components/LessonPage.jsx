@@ -9,7 +9,12 @@ const LessonPage = () => {
   const lessonContainerRef = useRef(null);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [lessonCompleted, setLessonCompleted] = useState(false);
-
+const playerRef = useRef(null);
+const handleLogoClick = () => {
+    if (playerRef.current) {
+      playerRef.current.saveCurrentProgress();
+    }
+  };
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
@@ -67,7 +72,7 @@ const LessonPage = () => {
                   alignItems: 'center',
                   userSelect: 'none'
                 }}>
-                 <Link to="/" style={{textDecoration: 'none'}}>
+                 <Link to="/" onClick={handleLogoClick} style={{textDecoration: 'none'}}>
                   <span style={{ 
                     color: '#E5E5E7', 
                     WebkitTextStroke: '1px #2D3354' 
@@ -85,7 +90,7 @@ const LessonPage = () => {
     <div style={{ padding: '24px', minHeight: '100vh', background: '#F0F2F5' }}>
       <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
         <h1 style={{ fontFamily: "'Jersey 20', sans-serif", color: '#2D3354', marginBottom: '5px' }}>Lección N° {id}</h1>
-        <LessonPlayer lessonId={id} onProgress={() => {
+        <LessonPlayer lessonId={id} ref={playerRef} onProgress={() => {
           if (!lessonCompleted) {
             setLessonCompleted(true);
             navigate('/inicio');

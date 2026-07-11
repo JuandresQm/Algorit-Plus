@@ -802,7 +802,8 @@ const daysOfWeek = ['D', 'L', 'Ma', 'Mi', 'J', 'V', 'S'];
               </div>
 
               <div style={{ marginTop: '8px' }}>
-                <LessonCharts entries={progressEntries} units={allUnits} colors={colors} isMobile={isMobile} />
+                <LessonCharts entries={progressEntries} units={allUnits} colors={colors} isMobile={isMobile} actividades={actividades} // 👈 Agrega esto
+  entregas={entregas} />
               </div>
             </div>
           )}
@@ -895,6 +896,8 @@ const daysOfWeek = ['D', 'L', 'Ma', 'Mi', 'J', 'V', 'S'];
                         border: 'none',
                         cursor: 'pointer',
                         transition: 'background-color 0.2s ease',
+                        boxShadow: '0 4px 0 #1e2238', 
+  border: '2px solid #2D3354',
                       }}
                       onClick={() => abrirActividadEnEditor(actividad.id)}
                     >
@@ -1261,13 +1264,16 @@ height: isMobile ? '100%' : '100vh',
     border: 'none',
     borderRadius: '16px',
     padding: '12px 26px',
-    background: '#4f5988',
+    background: '#2D3354',
     color: 'white',
     fontWeight: '700',
     cursor: 'pointer',
     minWidth: '170px',
     display: isMobile ? 'block' : 'inline-block',
-    margin: isMobile ? '0 auto' : '0'
+    margin: isMobile ? '0 auto' : '0',
+    boxShadow: '0 4px 0 #1e2238', 
+  border: '2px solid #2D3354',
+    borderRadius: '16px'
   }),
   moduleCard: {
     backgroundColor: '#F5F6FB',

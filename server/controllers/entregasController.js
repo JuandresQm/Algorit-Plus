@@ -47,7 +47,7 @@ const getEntregasByDocente = async (req, res) => {
   try {
     const actividades = await Actividad.findAll({
       where: { docenteId: req.user.id },
-      attributes: ['id', 'titulo']
+      attributes: ['id', 'titulo', 'enunciado']
     });
 
     const actividadIds = actividades.map((actividad) => actividad.id);
@@ -62,7 +62,7 @@ const getEntregasByDocente = async (req, res) => {
         {
           model: Actividad,
           as: 'actividad',
-          attributes: ['id', 'titulo']
+          attributes: ['id', 'titulo', 'enunciado']
         },
         {
           model: User,
@@ -88,7 +88,7 @@ const getEntregasByEstudiante = async (req, res) => {
         {
           model: Actividad,
           as: 'actividad',
-          attributes: ['titulo']
+          attributes: ['titulo', 'enunciado']
         },
           ],
       order: [['createdAt', 'DESC']]

@@ -1,14 +1,18 @@
-import React from 'react';
+import React, {useEffect, useState} from 'react';
 // Importas tus dos nuevos componentes interactivos
 import MetodologiaFlowSimulator from './MetodologiaFlowSimulator';
 import TresCajasSimulador from './TresCajasSimulador';
 import EditorCode from './CodeEditor';
-const LessonContent = ({ content, onActivityComplete }) => {
+const LessonContent = ({ content, onActivityComplete, onLessonCodeSubmit }) => {
   if (!Array.isArray(content) || !content.length) return null;
-
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+ useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   return (
     <div className="lesson-content" style={styles.content}>
-      {/* Estilos inyectados para replicar exactamente los tokens de color del CodeEditor */}
       <style>
         {`
           .lesson-card-shadow {
@@ -134,12 +138,21 @@ const LessonContent = ({ content, onActivityComplete }) => {
               </div>
             );
           case 'editorCode':
-            return (
-              <div key={idx} className="my-4 p-4 bg-white rounded shadow-sm">
-                <h3 style={styles.textElement} className="text-lg font-bold text-center">{block.value}</h3>
-                <EditorCode settings={block.settings} onComplete={onActivityComplete} />
-              </div>
-            );
+  return (
+   <div key={idx} style={{ 
+      width: '85vw',        
+      marginLeft: isMobile ? '5px' : '-77.5px',   
+      height: '90vh',
+      overflow: isMobile ? 'auto' : 'hidden',
+    }}>
+      <EditorCode 
+        lessonMode={true}
+        lessonData={block.settings}
+        onLessonSubmit={onLessonCodeSubmit}
+        onComplete={onActivityComplete}
+      />
+    </div>
+  );
           default:
             return null;
         }

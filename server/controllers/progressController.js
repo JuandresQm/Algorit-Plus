@@ -51,7 +51,7 @@ function levelFromExp(exp) {
 
 const saveLessonProgress = async (req, res) => {
   try {
-    const { currentPage, completed = false, score = 0, totalTimeSeconds, elapsedSeconds, tiempo_estimado_segundos } = req.body;
+    const { currentPage, completed = false, score = 0, totalTimeSeconds, elapsedSeconds} = req.body;
     const lessonId = req.params.id;
 
     const existingProgress = await UserProgress.findOne({
@@ -64,8 +64,7 @@ const saveLessonProgress = async (req, res) => {
 
     const normalizedCompleted = Boolean(completed);
     const normalizedScore = Number.isFinite(Number(score)) ? Number(score) : (existingProgress?.score || 0);
-    const normalizedTime = Number.isFinite(Number(totalTimeSeconds));
-
+const normalizedTime = (typeof totalTimeSeconds === 'number' && !isNaN(totalTimeSeconds)) ? totalTimeSeconds : 0;
     // If not completing, just upsert progress and return
     if (!normalizedCompleted) {
       const savedProgress = await UserProgress.upsert({

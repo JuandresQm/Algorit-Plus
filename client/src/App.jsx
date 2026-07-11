@@ -65,7 +65,7 @@ function App() {
   <Route path="/editor" element={<CodeEditor />} />
   <Route path="/compartir" element={<ImportProject />} />
 </Route>
- <Route element={<ProtectedRoute isAllowed={!!user && user.rol === 'docente'} requireToken={true} />}>
+        <Route element={<ProtectedRoute isAllowed={!!user && user.rol === 'docente'} requireToken={true} />}>
           <Route path="/docente" element={<InicioDocente user={user} onLogout={handleLogout}/>} />
           <Route path="/editor/revision" element={<CodeEditor user={user} />} />
         </Route>

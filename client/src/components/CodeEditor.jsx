@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Folder, Plus, Database, Box, Code, Terminal, ChevronDown, Play, Eraser, Save } from 'lucide-react';
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
+import { Folder, Plus, Database, Box, Code, Terminal, ChevronDown, Play, Eraser, Save, Eye } from 'lucide-react';
 import { useAlgorit } from '../hooks/useAlgorit';
 import api from '../api/axios';
 import Swal from 'sweetalert2';
-function CodeEditorView({ reviewMode = false, reviewData = null, onCloseReview = null }) {
+function CodeEditorView({ reviewMode: propsReviewMode = false, reviewData: propsReviewData = null, onCloseReview = null, lessonMode = false,  lessonData = null,  onLessonSubmit = null }) {
+  const location = useLocation();
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-  
+  const reviewMode = propsReviewMode || location.state?.reviewMode || location.pathname.includes('/revision');
+  const reviewData = propsReviewData || location.state?.reviewData;
   // 1. ESTADO DEL EDITOR: Guardamos el código que el usuario escribe
   const [code, setCode] = useState('');
   const [savedCode, setSavedCode] = useState('');
@@ -21,39 +23,11 @@ function CodeEditorView({ reviewMode = false, reviewData = null, onCloseReview =
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 const [segundosTranscurridos, setSegundosTranscurridos] = useState(0);
-
+// CRONÓMETRO DEL ESTUDIANTE (Independiente)
 useEffect(() => {
   if (!actividadStartTime) return;
 
-
-  const calcularSegundos = () => {
-    return Math.max(0, Math.floor((Date.now() - actividadStartTime) / 1000));
-  };
-
-  const handleGradeSubmit = async () => {
-    if (!reviewData || !reviewData.id) return;
-    const numericGrade = Number(grade);
-    if (Number.isNaN(numericGrade) || numericGrade < 0 || numericGrade > 100) {
-      Swal.fire('Nota inválida', 'Ingresa una nota entre 0 y 100', 'warning');
-      return;
-    }
-    try {
-      setIsSubmittingGrading(true);
-      await api.put(`/entregas/${reviewData.id}/calificar`, {
-        estado: 'clasificado',
-        nota: numericGrade,
-        observaciones: observaciones || ''
-      });
-      await Swal.fire({ title: 'Calificación guardada', text: 'La entrega fue calificada correctamente.', icon: 'success', confirmButtonColor: '#2D3354' });
-      if (typeof onCloseReview === 'function') onCloseReview();
-    } catch (error) {
-      console.error('Error calificando entrega:', error);
-      Swal.fire('Error', error.response?.data?.message || 'No se pudo calificar la entrega', 'error');
-    } finally {
-      setIsSubmittingGrading(false);
-    }
-  };
-
+  const calcularSegundos = () => Math.max(0, Math.floor((Date.now() - actividadStartTime) / 1000));
   setSegundosTranscurridos(calcularSegundos());
 
   const intervalo = setInterval(() => {
@@ -62,6 +36,38 @@ useEffect(() => {
 
   return () => clearInterval(intervalo);
 }, [actividadStartTime]);
+
+const handleGradeSubmit = async () => {
+    const entregaId = reviewData?.entregaId || reviewData?.id;
+    if (!reviewData || !entregaId) return; 
+    
+    const numericGrade = Number(grade);
+    if (Number.isNaN(numericGrade) || numericGrade < 0 || numericGrade > 100) {
+      Swal.fire('Nota inválida', 'Ingresa una nota entre 0 y 100', 'warning');
+      return;
+    }
+    try {
+      setIsSubmittingGrading(true);
+      await api.put(`/entregas/${entregaId}/calificar`, {
+        estado: 'calificado',
+        nota: numericGrade,
+        observaciones: observaciones || ''
+      });
+    await Swal.fire({ 
+      title: 'Calificación guardada', 
+      text: 'La entrega fue calificada correctamente.', 
+      icon: 'success', 
+      confirmButtonColor: '#2D3354' 
+    });
+    navigate('/docente');
+    if (typeof onCloseReview === 'function') onCloseReview();
+  } catch (error) {
+    console.error('Error calificando entrega:', error);
+    Swal.fire('Error', error.response?.data?.message || 'No se pudo calificar la entrega', 'error');
+  } finally {
+    setIsSubmittingGrading(false);
+  }
+};
 
 const formatearCronometro = (totalSegundos) => {
   const horas = Math.floor(totalSegundos / 3600);
@@ -98,7 +104,7 @@ useEffect(() => {
 
 const mostrarAlertaCambiosSinGuardar = async () => {
   const confirmado = await Swal.fire({
-    title: '¿Deseas continuar?',
+    title: 'Deseas continuar?',
     html: 'Tienes cambios sin guardar.<br />' +
           '<strong>Si continúas, se perderán los cambios de este proyecto.</strong><br />' +
           '¿Deseas continuar sin guardar?',
@@ -118,8 +124,7 @@ const mostrarAlertaCambiosSinGuardar = async () => {
   return confirmado.isConfirmed;
 };
 
-  useEffect(() => {
-    const fetchProjects = async () => {
+   const fetchProjects = async () => {
       try {
         const response = await api.get('/proyectos');
         setProjects(response.data.projects || []);
@@ -130,8 +135,20 @@ const mostrarAlertaCambiosSinGuardar = async () => {
       }
     };
 
+
+ useEffect(() => {
+    if (reviewMode || lessonMode) {
+      setIsLoadingProjects(false);
+      return;
+    }
     fetchProjects();
-  }, []);
+  }, [reviewMode, lessonMode]);
+
+  useEffect(() => {
+  if (lessonMode) {
+    setActividadStartTime(Date.now());
+  }
+}, [lessonMode]);
 
   const loadProject = async (projectId) => {
     try {
@@ -146,10 +163,10 @@ const mostrarAlertaCambiosSinGuardar = async () => {
       setProjectError('No se pudo cargar el proyecto seleccionado.');
     }
   };
-
   
 
   useEffect(() => {
+    if (reviewMode) return;
     const activityId = searchParams.get('activityId');
     const projectId = searchParams.get('projectId');
 
@@ -168,81 +185,64 @@ const mostrarAlertaCambiosSinGuardar = async () => {
         try {
           const response = await api.get('/actividades/estudiante');
           const actividad = response.data.actividades?.find((item) => String(item.id) === String(activityId));
-            {reviewMode && reviewData ? (
-              <div style={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '12px', marginBottom: '12px', position: 'relative' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ fontSize: '12px', fontWeight: '700', color: '#4f5988', textTransform: 'uppercase' }}>Revisión de entrega</div>
-                  <button style={{ background: '#eef2ff', border: '1px solid #d1e3ff', color: '#2D3354', padding: '6px 10px', borderRadius: '8px', cursor: 'pointer' }}>Delegar a la IA</button>
-                </div>
-                <div style={{ fontWeight: '700', color: '#0f172a', marginTop: '10px' }}>{reviewData.estudiante?.name} {reviewData.estudiante?.lastname} (@{reviewData.estudiante?.username})</div>
-                <div style={{ fontSize: '13px', color: '#475569', marginTop: '6px' }}>Tiempo empleado: {reviewData.tiempoEmpleado ? formatearCronometro(reviewData.tiempoEmpleado) : '—'}</div>
-                <div style={{ marginTop: '12px' }}>
-                  <label style={{ fontSize: '13px', color: '#475569', fontWeight: '700' }}>Nota (0-100)</label>
-                  <input type="number" min="0" max="100" value={grade} onChange={(e) => setGrade(e.target.value)} style={{ width: '100%', padding: '8px 10px', marginTop: '6px', borderRadius: '8px', border: '1px solid #e2e8f0' }} />
-                </div>
-                <div style={{ marginTop: '12px' }}>
-                  <label style={{ fontSize: '13px', color: '#475569', fontWeight: '700' }}>Observaciones</label>
-                  <textarea value={observaciones} onChange={(e) => setObservaciones(e.target.value)} style={{ width: '100%', minHeight: '80px', padding: '8px 10px', marginTop: '6px', borderRadius: '8px', border: '1px solid #e2e8f0' }} />
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '12px' }}>
-                  <button onClick={handleGradeSubmit} disabled={isSubmittingGrading} style={{ background: '#2D3354', color: 'white', padding: '10px 14px', borderRadius: '8px', border: 'none', cursor: 'pointer' }}>{isSubmittingGrading ? 'Enviando...' : 'Entregar'}</button>
-                </div>
-              </div>
-            ) : (
-              <>
-                <AccordionItem icon={<Database size={18} />} title="Variables" color="#3b82f6">
-                  {variables.length > 0 ? (
-                    <div>
-                      {variables.map((variable, index) => (
-                        <div key={index} style={{ marginBottom: '8px', padding: '6px', backgroundColor: '#ffffff', borderRadius: '4px', border: '1px solid #e2e8f0' }}>
-                          <div style={{ fontWeight: '600', color: '#1e293b' }}>{variable.name}</div>
-                          <div style={{ fontSize: '12px', color: '#64748b' }}>
-                            Tipo: {variable.type}{variable.size ? ` (${Array.isArray(variable.size) ? '[' + variable.size.join('][') + ']' : variable.size})` : ''}
-                          </div>
-                          <div style={{ fontSize: '12px', color: '#475569', fontFamily: 'monospace' }}>
-                            Valor: {variable.value || 'nulo'} 
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div style={{ fontStyle: 'italic', color: '#94a3b8' }}>
-                      No hay variables definidas
-                    </div>
-                  )}
-                </AccordionItem>
-                <AccordionItem icon={<Box size={18} />} title="Subalgoritmos" color="#f97316">
-                  {subalgorithms.length > 0 ? (
-                    <div>
-                      {subalgorithms.map((sub, index) => (
-                        <div key={index} style={{ marginBottom: '8px', padding: '6px', backgroundColor: '#ffffff', borderRadius: '4px', border: '1px solid #e2e8f0' }}>
-                          <div style={{ fontWeight: '600', color: '#1e293b' }}>{sub.name}</div>
-                          <div style={{ fontSize: '12px', color: '#64748b' }}>
-                            {sub.isFunction ? 'Función' : 'Procedimiento'} {sub.returnType ? `: ${sub.returnType}` : ''}
-                          </div>
-                          <div style={{ fontSize: '12px', color: '#475569', fontFamily: 'monospace' }}>
-                            Parámetros: {sub.params.length > 0 ? sub.params.map(param => {
-                                const paramName = param.name || (param.target?.value ?? param.target?.property ?? '');
-                                const paramType = param.type ? `: ${param.type}` : '';
-                                const paramMode = param.mode ? ` (${param.mode})` : '';
-                                return `${paramName}${paramType}${paramMode}`;
-                              }).join(', ') : 'Sin parámetros'}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div style={{ fontStyle: 'italic', color: '#94a3b8' }}>
-                      No hay subalgoritmos definidos
-                    </div>
-                  )}
-                </AccordionItem>
-              </>
-            )}
-    setActiveActividad(null);
-    setActividadStartTime(null);
-    navigate(`/editor?projectId=${project.id}`);
-  };
+
+          if (!actividad) {
+            setProjectError('No se encontró la actividad seleccionada.');
+            return;
+          }
+
+          const projectResponse = await api.post('/proyectos', {
+            title: `Actividad: ${actividad.titulo}`,
+            code: '',
+            type: 'actividad_docente',
+            actividadId: actividad.id
+          });
+
+          const project = projectResponse.data.project || projectResponse.data;
+          setSelectedProject(project);
+          setCode(project.code || '');
+          setSavedCode(project.code || '');
+          setActiveActividad(actividad);
+          setActividadStartTime(Date.now());
+          setProjectError(null);
+
+          if (!projectId || String(project.id) !== String(projectId)) {
+            navigate(`/editor?projectId=${project.id}&activityId=${actividad.id}`, { replace: true });
+          }
+        } catch (error) {
+          console.error('Error inicializando actividad:', error);
+          setProjectError('No se pudo abrir la actividad seleccionada.');
+        }
+        return;
+      }
+
+      setActiveActividad(null);
+      setActividadStartTime(null);
+
+      if (projectId) {
+        if (selectedProject?.id?.toString() === projectId.toString()) return;
+        if (hasUnsavedChanges) {
+          const continuar = await mostrarAlertaCambiosSinGuardar();
+          if (!continuar) {
+            if (selectedProject) {
+              navigate(`/editor?projectId=${selectedProject.id}`, { replace: true });
+            }
+            return;
+          }
+        }
+        loadProject(projectId);
+      } else if (projects.length > 0 && !selectedProject) {
+        const firstProject = projects[0];
+        setSelectedProject(firstProject);
+        const firstCode = firstProject.code || '';
+        setCode(firstCode);
+        setSavedCode(firstCode);
+        navigate(`/editor?projectId=${firstProject.id}`, { replace: true });
+      }
+    };
+
+    initialize();
+  }, [searchParams, projects, selectedProject]);
 
   const handleEntregarActividad = async () => {
   if (!activeActividad || !selectedProject) {
@@ -338,7 +338,7 @@ await api.post('/entregas', {
       const saved = response.data.code || '';
       setCode(saved);
       setSavedCode(saved);
-      await refreshProjects();
+      await fetchProjects();
       setProjectError(null);
     } catch (error) {
       console.error('Error guardando proyecto:', error);
@@ -587,6 +587,7 @@ const applySuggestion = (item) => {
 };
 
 const handleEditorChange = (e) => {
+  if (reviewMode) return;
   const updatedCode = e.target.value;
   const cursorPosition = e.target.selectionStart;
   setCode(updatedCode);
@@ -682,6 +683,18 @@ const colors = {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+const handleProjectSelect = async (project) => {
+    if (hasUnsavedChanges) {
+      const continuar = await mostrarAlertaCambiosSinGuardar();
+      if (!continuar) return;
+    }
+    await loadProject(project.id);
+    setActiveActividad(null);
+    setActividadStartTime(null);
+    navigate(`/editor?projectId=${project.id}`);
+  };
+
+
  useEffect(() => {
   const handleBeforeUnload = (event) => {
     if (!hasUnsavedChanges) return;
@@ -689,6 +702,7 @@ const colors = {
     event.returnValue = '';
     return '';
   };
+
 
   const handlePopState = async () => {
     if (!hasUnsavedChanges) return;
@@ -730,6 +744,16 @@ const colors = {
   };
 }, [hasUnsavedChanges, selectedProject]);
 
+useEffect(() => {
+    if (reviewMode && reviewData) {
+      const studentCode = reviewData.codigoEnviado || reviewData.codigo || '';
+      setCode(studentCode);
+      setSavedCode(studentCode);
+    } else if (!reviewMode) {
+      setCode('');
+      setSavedCode('');
+    }
+  }, [reviewMode, reviewData]);
 
   const lineCount = code.split('\n').length;
   const lines = Array.from({ length: lineCount }, (_, i) => i + 1);
@@ -995,16 +1019,19 @@ const colors = {
         backgroundColor: '#EEEEEE',
         borderBottom: '1px solid #ccc'
       }}>
-        <div style={{ fontFamily: "'Jersey 20', sans-serif", fontSize: isMobile ? '38px' : '45px', cursor: 'pointer', display: 'flex', alignItems: 'center', userSelect: 'none' }}>
+        
+        
+        {!lessonMode && (<div style={{ fontFamily: "'Jersey 20', sans-serif", fontSize: isMobile ? '38px' : '45px', cursor: 'pointer', display: 'flex', alignItems: 'center', userSelect: 'none' }}>
                   <a href="/inicio" onClick={handleNavigateHome} style={{textDecoration: 'none', color: 'inherit'}}>
                     <span style={{ color: '#E5E5E7', WebkitTextStroke: '1px #2D3354' }}>
                       {isMobile ? 'Alg' : 'Algorit'}
                     </span>
                     <span style={{ color: '#2D3354' }}>+</span>
                   </a>
-</div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-          <button onClick={handleRunCode} style={{
+</div> )}
+        
+        
+<div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginLeft: 'auto' }}>          <button onClick={handleRunCode} style={{
               display: 'flex', alignItems: 'center', gap: '8px',
               backgroundColor: '#0b9448', color: 'white', border: 'none',
               padding: '8px 16px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer'
@@ -1013,7 +1040,20 @@ const colors = {
           </button>
           {!reviewMode && (
             <>
-              {activeActividad && (
+              {lessonMode && onLessonSubmit && (
+      <button
+        type="button"
+        onClick={() => onLessonSubmit(code, segundosTranscurridos)}
+        style={{
+          display: 'flex', alignItems: 'center', gap: '8px',
+          backgroundColor: '#0b9448', color: 'white', border: 'none',
+          padding: '8px 16px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer'
+        }}
+      >
+        Entregar Código
+      </button>
+    )}
+              {!lessonMode && activeActividad && (
                 <button
                   type="button"
                   onClick={handleEntregarActividad}
@@ -1062,149 +1102,191 @@ const colors = {
         
         {/* --- COLUMNA 1: SIDEBAR --- */}
         <div className="algorit-sidebar" style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-            {activeActividad ? (
-                    <div
+           
+            {!reviewMode && (
+  activeActividad || lessonMode ? (
+              <div
+                  style={{
+                    backgroundColor: '#f8fafc',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '12px',
+                    padding: '12px',
+                    marginBottom: '12px',
+                    userSelect: 'none',
+                    WebkitUserSelect: 'none'
+                  }}
+                >
+                  <div style={{ fontSize: '12px', fontWeight: '700', color: '#4f5988', marginBottom: '6px', textTransform: 'uppercase' }}>{lessonMode ? 'Práctica de Lección' : 'Actividad asignada'}</div>
+                  {!reviewMode && !lessonMode && (
+                    <div style={{ fontSize: '12px', fontWeight: '700', color: '#4f5988', marginBottom: '6px', textTransform: 'uppercase' }}>
+                      Tiempo: {formatearCronometro(segundosTranscurridos)}
+                    </div>
+                  )}
+                  <div style={{ fontWeight: '700', color: '#0f172a', marginBottom: '6px' }}>{lessonMode ? lessonData?.titulo : activeActividad.titulo}</div>
+                  <div style={{ fontSize: '13px', color: '#475569', lineHeight: 1.5, textAlign: 'justify' }}>{lessonMode ? lessonData?.enunciado : activeActividad.enunciado}</div>
+              </div>
+  ) : (   
+      <div className="card-shadow">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px', borderBottom: '1px solid #ccc' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: colors.primary, fontWeight: '600' }}>
+                  <Folder size={18} />
+                  <span>Mis Proyectos</span>
+              </div>
+          </div>
+          
+          <div style={{ padding: '15px 20px', minHeight: '220px' }}>              
+              {isLoadingProjects ? (
+                  <p style={{ margin: 0, color: '#64748b', textAlign: 'center' }}>Cargando proyectos...</p>
+              ) : projects.length > 0 ? (
+                  projects.map((project) => (
+                      <button
+                        key={project.id}
+                        type="button"
+                        onClick={() => handleProjectSelect(project)}
                         style={{
-                          backgroundColor: '#f8fafc',
+                          width: '100%',
+                          textAlign: 'left',
+                          background: selectedProject?.id === project.id ? '#eef2ff' : '#fff',
                           border: '1px solid #e2e8f0',
                           borderRadius: '12px',
-                          padding: '12px',
-                          marginBottom: '12px',
-                          userSelect: 'none',
-                          WebkitUserSelect: 'none'
+                          padding: '12px 14px',
+                          marginBottom: '10px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          color: '#334155'
                         }}
                       >
-                        <div style={{ fontSize: '12px', fontWeight: '700', color: '#4f5988', marginBottom: '6px', textTransform: 'uppercase' }}>Actividad asignada</div>
-                        {!reviewMode && (
-                          <div style={{ fontSize: '12px', fontWeight: '700', color: '#4f5988', marginBottom: '6px', textTransform: 'uppercase' }}>
-                            Tiempo: {formatearCronometro(segundosTranscurridos)}
-                          </div>
-                        )}
-                        <div style={{ fontWeight: '700', color: '#0f172a', marginBottom: '6px' }}>{activeActividad.titulo}</div>
-                        <div style={{ fontSize: '13px', color: '#475569', lineHeight: 1.5, textAlign: 'justify' }}>{activeActividad.enunciado}</div>
-                    </div>
-) : (           
-            <div className="card-shadow">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px', borderBottom: '1px solid #ccc' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: colors.primary, fontWeight: '600' }}>
-                        <Folder size={18} />
-                        <span>Mis Proyectos</span>
-                    </div>
-                </div>
-                <div style={{ padding: '15px 20px', minHeight: '220px' }}>              
-                    {isLoadingProjects ? (
-                        <p style={{ margin: 0, color: '#64748b', textAlign: 'center' }}>Cargando proyectos...</p>
-                    ) : projects.length > 0 ? (
-                        projects.map((project) => (
-                            <button
-                              key={project.id}
-                              type="button"
-                              onClick={() => handleProjectSelect(project)}
-                              style={{
-                                width: '100%',
-                                textAlign: 'left',
-                                background: selectedProject?.id === project.id ? '#eef2ff' : '#fff',
-                                border: '1px solid #e2e8f0',
-                                borderRadius: '12px',
-                                padding: '12px 14px',
-                                marginBottom: '10px',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'space-between',
-                                color: '#334155'
-                              }}
-                            >
-                                <span>{project.title}</span>
-                                <span style={{ color: '#94a3b8', fontSize: '12px' }}>{project.updatedAt ? new Date(project.updatedAt).toLocaleDateString() : ''}</span>
-                            </button>
-                        ))
-                    ) : (
-                        <div style={{ textAlign: 'center', color: '#94a3b8' }}>
-                            <Folder size={48} style={{ margin: '0 auto 10px auto', opacity: 0.5 }} />
-                            <p style={{ margin: '0 0 5px 0', fontWeight: '500', color: '#64748b' }}>No hay proyectos</p>
-                            <p style={{ margin: 0, fontSize: '13px' }}>Crea tu primer proyecto desde Inicio para comenzar.</p>
-                        </div>
-                    )}
-                    {projectError && <p style={{ color: '#b91c1c', fontSize: '13px', marginTop: '10px' }}>{projectError}</p>}
-                </div>
-            </div>
+                          <span>{project.title}</span>
+                          <span style={{ color: '#94a3b8', fontSize: '12px' }}>{project.updatedAt ? new Date(project.updatedAt).toLocaleDateString() : ''}</span>
+                      </button>
+                  ))
+              ) : (
+                  <div style={{ textAlign: 'center', color: '#94a3b8' }}>
+                      <Folder size={48} style={{ margin: '0 auto 10px auto', opacity: 0.5 }} />
+                      <p style={{ margin: '0 0 5px 0', fontWeight: '500', color: '#64748b' }}>No hay proyectos</p>
+                      <p style={{ margin: 0, fontSize: '13px' }}>Crea tu primer proyecto desde Inicio para comenzar.</p>
+                  </div>
+              )}
+              {projectError && <p style={{ color: '#b91c1c', fontSize: '13px', marginTop: '10px' }}>{projectError}</p>}
+          </div>
+      </div>
+  )
 )}
             {reviewMode && reviewData ? (
-              <div style={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '12px', marginBottom: '12px', position: 'relative' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ fontSize: '12px', fontWeight: '700', color: '#4f5988', textTransform: 'uppercase' }}>Revisión de entrega</div>
-                  <button style={{ background: '#eef2ff', border: '1px solid #d1e3ff', color: '#2D3354', padding: '6px 10px', borderRadius: '8px', cursor: 'pointer' }}>Delegar a la IA</button>
-                </div>
-                <div style={{ fontWeight: '700', color: '#0f172a', marginTop: '10px' }}>{reviewData.estudiante?.name} {reviewData.estudiante?.lastname} (@{reviewData.estudiante?.username})</div>
-                <div style={{ fontSize: '13px', color: '#475569', marginTop: '6px' }}>Tiempo empleado: {reviewData.tiempoEmpleado ? formatearCronometro(reviewData.tiempoEmpleado) : '—'}</div>
-                <div style={{ marginTop: '12px' }}>
-                  <label style={{ fontSize: '13px', color: '#475569', fontWeight: '700' }}>Nota (0-100)</label>
-                  <input type="number" min="0" max="100" value={grade} onChange={(e) => setGrade(e.target.value)} style={{ width: '100%', padding: '8px 10px', marginTop: '6px', borderRadius: '8px', border: '1px solid #e2e8f0' }} />
-                </div>
-                <div style={{ marginTop: '12px' }}>
-                  <label style={{ fontSize: '13px', color: '#475569', fontWeight: '700' }}>Observaciones</label>
-                  <textarea value={observaciones} onChange={(e) => setObservaciones(e.target.value)} style={{ width: '100%', minHeight: '80px', padding: '8px 10px', marginTop: '6px', borderRadius: '8px', border: '1px solid #e2e8f0' }} />
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '12px' }}>
-                  <button onClick={handleGradeSubmit} disabled={isSubmittingGrading} style={{ background: '#2D3354', color: 'white', padding: '10px 14px', borderRadius: '8px', border: 'none', cursor: 'pointer' }}>{isSubmittingGrading ? 'Enviando...' : 'Entregar'}</button>
-                </div>
-              </div>
-            ) : (
-              <AccordionItem icon={<Database size={18} />} title="Variables" color="#3b82f6">
-            {!reviewMode && (
-              <div>
-                  {variables.length > 0 ? (
-                    <div>
-                      {variables.map((variable, index) => (
-                        <div key={index} style={{ marginBottom: '8px', padding: '6px', backgroundColor: '#ffffff', borderRadius: '4px', border: '1px solid #e2e8f0' }}>
-                          <div style={{ fontWeight: '600', color: '#1e293b' }}>{variable.name}</div>
-                          <div style={{ fontSize: '12px', color: '#64748b' }}>
-                            Tipo: {variable.type}{variable.size ? ` (${Array.isArray(variable.size) ? '[' + variable.size.join('][') + ']' : variable.size})` : ''}
-                          </div>
-                          <div style={{ fontSize: '12px', color: '#475569', fontFamily: 'monospace' }}>
-                            Valor: {variable.value || 'nulo'} 
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div style={{ fontStyle: 'italic', color: '#94a3b8' }}>
-                      No hay variables definidas
-                    </div>
-                  )}
-      
-                  </div>
-                  </AccordionItem>
-                
-                <AccordionItem icon={<Box size={18} />} title="Subalgoritmos" color="#f97316">
-                  {subalgorithms.length > 0 ? (
-                    <div>
-                      {subalgorithms.map((sub, index) => (
-                        <div key={index} style={{ marginBottom: '8px', padding: '6px', backgroundColor: '#ffffff', borderRadius: '4px', border: '1px solid #e2e8f0' }}>
-                          <div style={{ fontWeight: '600', color: '#1e293b' }}>{sub.name}</div>
-                          <div style={{ fontSize: '12px', color: '#64748b' }}>
-                            {sub.isFunction ? 'Función' : 'Procedimiento'} {sub.returnType ? `: ${sub.returnType}` : ''}
-                          </div>
-                          <div style={{ fontSize: '12px', color: '#475569', fontFamily: 'monospace' }}>
-                            Parámetros: {sub.params.length > 0 ? sub.params.map(param => {
-                                const paramName = param.name || (param.target?.value ?? param.target?.property ?? '');
-                                const paramType = param.type ? `: ${param.type}` : '';
-                                const paramMode = param.mode ? ` (${param.mode})` : '';
-                                return `${paramName}${paramType}${paramMode}`;
-                              }).join(', ') : 'Sin parámetros'}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div style={{ fontStyle: 'italic', color: '#94a3b8' }}>
-                      No hay subalgoritmos definidos
-                    </div>
-                  )}
-                </AccordionItem>
-            )}
+  /* --- VISTA: MODO REVISIÓN (PROFESOR) --- */
+  <div style={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '12px', marginBottom: '12px', position: 'relative' }}>
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ fontSize: '12px', fontWeight: '700', color: '#4f5988', textTransform: 'uppercase' }}>Actividad asignada</div>
+      <button style={{ background: '#eef2ff', border: '1px solid #d1e3ff', color: '#2D3354', padding: '6px 10px', borderRadius: '8px', cursor: 'pointer' }}>Delegar a la IA</button>
+    </div>
+    
 
+
+<div 
+    style={{ fontWeight: '700', color: '#0f172a', marginTop: '10px', cursor: 'pointer' }}
+    title="Haz clic para ver el enunciado completo"
+    onClick={() => {
+        if (reviewData?.actividad) {
+            Swal.fire({
+                title: reviewData.actividad.titulo,
+                text: reviewData.actividad?.enunciado,
+                icon: 'info',
+                confirmButtonText: 'Cerrar',
+                confirmButtonColor: '#2D3354'
+            });
+        }
+    }}
+>
+    {reviewData.actividad?.titulo}
+    <Eye size={15} style={{ color: '#64748b', minWidth: '15px', marginLeft: '5px' }} />
+</div>
+
+    <div style={{ fontWeight: '700', color: '#0f172a', marginTop: '10px' }}>
+      {reviewData.estudiante?.name} {reviewData.estudiante?.lastname} (@{reviewData.estudiante?.username})
+    </div>
+    
+
+
+
+
+    <div style={{ fontSize: '13px', color: '#475569', marginTop: '6px' }}>
+      Tiempo empleado: {reviewData.tiempoEmpleado ? formatearCronometro(reviewData.tiempoEmpleado) : '—'}
+    </div>
+    
+    <div style={{ marginTop: '12px' }}>
+      <label style={{ fontSize: '13px', color: '#475569', fontWeight: '700' }}>Nota (0-100)</label>
+      <input type="number" min="0" max="100" value={grade} onChange={(e) => setGrade(e.target.value)} style={{ width: '100%', padding: '8px 10px', marginTop: '6px', borderRadius: '8px', border: '1px solid #e2e8f0' }} />
+    </div>
+    
+    <div style={{ marginTop: '12px' }}>
+      <label style={{ fontSize: '13px', color: '#475569', fontWeight: '700' }}>Observaciones</label>
+      <textarea value={observaciones} onChange={(e) => setObservaciones(e.target.value)} style={{ width: '100%', minHeight: '80px', padding: '8px 10px', marginTop: '6px', borderRadius: '8px', border: '1px solid #e2e8f0' }} />
+    </div>
+    
+    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '12px' }}>
+      <button onClick={handleGradeSubmit} disabled={isSubmittingGrading} style={{ background: '#2D3354', color: 'white', padding: '10px 14px', borderRadius: '8px', border: 'none', cursor: 'pointer' }}>
+        {isSubmittingGrading ? 'Enviando...' : 'Entregar'}
+      </button>
+    </div>
+  </div>
+) : (
+  /* --- VISTA: MODO EDITOR NORMAL (ESTUDIANTE) --- */
+  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+    {/* ACORDEÓN DE VARIABLES */}
+    <AccordionItem icon={<Database size={18} />} title="Variables" color="#3b82f6">
+      {variables.length > 0 ? (
+        <div>
+          {variables.map((variable, index) => (
+            <div key={index} style={{ marginBottom: '8px', padding: '6px', backgroundColor: '#ffffff', borderRadius: '4px', border: '1px solid #e2e8f0' }}>
+              <div style={{ fontWeight: '600', color: '#1e293b' }}>{variable.name}</div>
+              <div style={{ fontSize: '12px', color: '#64748b' }}>
+                Tipo: {variable.type}{variable.size ? ` (${Array.isArray(variable.size) ? '[' + variable.size.join('][') + ']' : variable.size})` : ''}
+              </div>
+              <div style={{ fontSize: '12px', color: '#475569', fontFamily: 'monospace' }}>
+                Valor: {variable.value || 'nulo'} 
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div style={{ fontStyle: 'italic', color: '#94a3b8' }}>
+          No hay variables definidas
+        </div>
+      )}
+    </AccordionItem>
+
+    {/* ACORDEÓN DE SUBALGORITMOS */}
+    <AccordionItem icon={<Box size={18} />} title="Subalgoritmos" color="#f97316">
+      {subalgorithms.length > 0 ? (
+        <div>
+          {subalgorithms.map((sub, index) => (
+            <div key={index} style={{ marginBottom: '8px', padding: '6px', backgroundColor: '#ffffff', borderRadius: '4px', border: '1px solid #e2e8f0' }}>
+              <div style={{ fontWeight: '600', color: '#1e293b' }}>{sub.name}</div>
+              <div style={{ fontSize: '12px', color: '#64748b' }}>
+                {sub.isFunction ? 'Función' : 'Procedimiento'} {sub.returnType ? `: ${sub.returnType}` : ''}
+              </div>
+              <div style={{ fontSize: '12px', color: '#475569', fontFamily: 'monospace' }}>
+                Parámetros: {sub.params.length > 0 ? sub.params.map(param => {
+                  const paramName = param.name || (param.target?.value ?? param.target?.property ?? '');
+                  const paramType = param.type ? `: ${param.type}` : '';
+                  const paramMode = param.mode ? ` (${param.mode})` : '';
+                  return `${paramName}${paramType}${paramMode}`;
+                }).join(', ') : 'Sin parámetros'}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div style={{ fontStyle: 'italic', color: '#94a3b8' }}>
+          No hay subalgoritmos definidos
+        </div>
+      )}
+    </AccordionItem>
+  </div>
+)}
+</div>
         {/* --- COLUMNA 2: EDITOR INTERACTIVO --- */}
         <div className="algorit-editor card-shadow" style={{ display: 'flex', flexDirection: 'column' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px 20px', backgroundColor: '#fff' }}>
@@ -1241,6 +1323,10 @@ const colors = {
                         onClick={handleEditorFocus}
                         onScroll={handleScroll}
                         spellCheck="false"
+                        readOnly={reviewMode}
+                        style={{
+                        cursor: reviewMode ? 'not-allowed' : 'text',
+  }}
                     />
                     <div ref={mirrorRef} className="textarea-mirror" aria-hidden="true" />
                     {suggestionsVisible && suggestions.length > 0 && (
@@ -1369,7 +1455,8 @@ const colors = {
         </div>
     </div>
 </div>
-
+</div>
+</>
   );
 };
 
@@ -1418,4 +1505,4 @@ const AccordionItem = ({ icon, title, color, children }) => {
   );
 };
 
-export default CodeEditor;
+export default CodeEditorView;

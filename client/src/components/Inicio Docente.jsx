@@ -292,20 +292,14 @@ const Inicio = ({ user, onLogout }) => {
     }
   };
 
-  const handleRevisar = (entrega) => {
-    navigate('/editor/revision', {
-      state: {
-        reviewData: {
-          nombre: entrega.estudiante?.name || '',
-          apellido: entrega.estudiante?.lastname || '',
-          tiempoEmpleado: entrega.tiempoEmpleado ?? 0,
-          codigoEnviado: entrega.codigoEnviado || '',
-          entregaId: entrega.id,
-          actividadTitulo: entrega.actividad?.titulo || 'Actividad'
-        }
-      }
-    });
-  };
+ const handleRevisar = (entrega) => {
+  navigate('/editor/revision', { 
+    state: { 
+      reviewMode: true, 
+      reviewData: entrega 
+    } 
+  });
+};
 
   return (
     <div style={styles.mainWrapper(colors.background, isMobile)}>

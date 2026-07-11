@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useImperativeHandle, forwardRef } from 'react';
 import LessonContent from './LessonContent';
 import LessonQuiz from './LessonQuiz';
 import axios from '../api/axios';
 import Swal from 'sweetalert2';
 
-const LessonPlayer = ({ lessonId, onProgress }) => {
+const LessonPlayer = forwardRef(({ lessonId, onProgress }, ref) => {
   const [lesson, setLesson] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -12,7 +12,34 @@ const LessonPlayer = ({ lessonId, onProgress }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [activityCompleted, setActivityCompleted] = useState(false);
   const [totalLessonTimeSeconds, setTotalLessonTimeSeconds] = useState(0);
+const isEditorPage = lesson?.content?.blocks[currentPage - 1]?.type === 'editorCode';
+const handleLessonCodeSubmit = async (code) => {
+ 
+    // Simulador de carga
+    Swal.fire({
+      title: 'Evaluando código...',
+      allowOutsideClick: false,
+      didOpen: () => Swal.showLoading()
+    });
 
+    setTimeout(() => {
+      Swal.fire({
+        title: '¡Excelente!',
+        text: 'Tu pseudocódigo superó las pruebas.',
+        icon: 'success',
+        confirmButtonColor: '#2D3354'
+      });
+
+
+      setActivityCompleted(true);
+      saveProgress(currentPage, true, 100, totalLessonTimeSeconds, true);
+    }, 1500);
+};
+useImperativeHandle(ref, () => ({
+    saveCurrentProgress: () => {
+      saveProgress(currentPage, false, 0, totalLessonTimeSeconds, false);
+    }
+  }));
   const getTotalPages = (lessonData) => {
     const blocks = Array.isArray(lessonData?.content?.blocks)
       ? lessonData.content.blocks
@@ -25,6 +52,8 @@ const LessonPlayer = ({ lessonId, onProgress }) => {
 
   const showAchievementToast = (unlocked) => {
     if (!Array.isArray(unlocked) || unlocked.length === 0) return;
+
+
 
     const listItems = unlocked
       .map((l) => `<li style="margin: 4px 0;">${l.nombre || 'Logro desbloqueado'}</li>`)
@@ -49,6 +78,7 @@ const LessonPlayer = ({ lessonId, onProgress }) => {
 
   const saveProgress = async (page, completed = false, score = 0, totalTimeSecondsValue = totalLessonTimeSeconds, showToasts = true) => {
     if (!lessonId || !lesson) return;
+
 
     try {
       const res = await axios.post(`/progreso/leccion/${lessonId}`, {
@@ -121,7 +151,7 @@ const LessonPlayer = ({ lessonId, onProgress }) => {
 
 useEffect(() => {
   const handleBeforeUnload = () => {
-    saveProgress(currentPage, false, 0, totalLessonTimeSeconds);
+    saveProgress(currentPage, false, 0, totalLessonTimeSeconds, false);
   };
   window.addEventListener('beforeunload', handleBeforeUnload);
   return () => window.removeEventListener('beforeunload', handleBeforeUnload);
@@ -142,7 +172,7 @@ useEffect(() => {
       setQuizResult(res.data);
       showAchievementToast(res.data?.unlocked || []);
       const isCompleted = res.data.score >= 60;
-      await saveProgress(currentPage, isCompleted, res.data.score || 0, totalLessonTimeSeconds, false);
+      await saveProgress(currentPage, isCompleted, res.data.score || 0, totalLessonTimeSeconds, true);
       if (onProgress) onProgress();
     } catch (err) {
       setQuizResult({ correct: false, message: 'Error al enviar respuestas.', details: err.response?.data || err.message });
@@ -172,12 +202,13 @@ useEffect(() => {
     if (page < 1 || page > totalPages) return;
     if (requiresActivityCompletion && !activityCompleted && page > currentPageIndex) return;
     setCurrentPage(page);
-    saveProgress(currentPage, false, 0, totalLessonTimeSeconds);
+    saveProgress(currentPage, false, 0, totalLessonTimeSeconds, false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
-
-  const nextDisabled = currentPageIndex === totalPages || (requiresActivityCompletion && !activityCompleted);
-  const formattedTotalTime = `${String(Math.floor(totalLessonTimeSeconds / 60)).padStart(2, '0')}:${String(totalLessonTimeSeconds % 60).padStart(2, '0')}`;
+const nextDisabled = 
+  currentPageIndex === totalPages || 
+  (isEditorPage && !activityCompleted);
+    const formattedTotalTime = `${String(Math.floor(totalLessonTimeSeconds / 60)).padStart(2, '0')}:${String(totalLessonTimeSeconds % 60).padStart(2, '0')}`;
 
   return (
     <div className="lesson-player">
@@ -192,8 +223,12 @@ useEffect(() => {
       </div>
 
       {!isQuizPage && currentBlock && (
-        <LessonContent content={[currentBlock]} onActivityComplete={() => setActivityCompleted(true)} />
-      )}
+  <LessonContent 
+    content={[currentBlock]} 
+    onActivityComplete={() => setActivityCompleted(true)} 
+    onLessonCodeSubmit={handleLessonCodeSubmit} 
+  />
+)}
 
       {isQuizPage && lesson.content.quiz && (
         <LessonQuiz quiz={lesson.content.quiz} onSubmit={handleQuizSubmit} result={quizResult} title={lesson.title} />
@@ -222,7 +257,7 @@ useEffect(() => {
       </div>
     </div>
   );
-};
+});
 
 const styles = {
   paginationHeader: {
