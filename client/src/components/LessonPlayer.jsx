@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useImperativeHandle, forwardRef } from 'react';
 import LessonContent from './LessonContent';
+import { useNavigate } from 'react-router-dom';
 import LessonQuiz from './LessonQuiz';
 import axios from '../api/axios';
 import Swal from 'sweetalert2';
 
 const LessonPlayer = forwardRef(({ lessonId, onProgress }, ref) => {
+  const navigate = useNavigate();
   const [lesson, setLesson] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -13,32 +15,11 @@ const LessonPlayer = forwardRef(({ lessonId, onProgress }, ref) => {
   const [activityCompleted, setActivityCompleted] = useState(false);
   const [totalLessonTimeSeconds, setTotalLessonTimeSeconds] = useState(0);
 const isEditorPage = lesson?.content?.blocks[currentPage - 1]?.type === 'editorCode';
-const handleLessonCodeSubmit = async (code) => {
- 
-    // Simulador de carga
-    Swal.fire({
-      title: 'Evaluando código...',
-      allowOutsideClick: false,
-      didOpen: () => Swal.showLoading()
-    });
 
-    setTimeout(() => {
-      Swal.fire({
-        title: '¡Excelente!',
-        text: 'Tu pseudocódigo superó las pruebas.',
-        icon: 'success',
-        confirmButtonColor: '#2D3354'
-      });
-
-
-      setActivityCompleted(true);
-      saveProgress(currentPage, true, 100, totalLessonTimeSeconds, true);
-    }, 1500);
-};
 useImperativeHandle(ref, () => ({
     saveCurrentProgress: () => {
       saveProgress(currentPage, false, 0, totalLessonTimeSeconds, false);
-    }
+    } 
   }));
   const getTotalPages = (lessonData) => {
     const blocks = Array.isArray(lessonData?.content?.blocks)
@@ -84,7 +65,7 @@ useImperativeHandle(ref, () => ({
       const res = await axios.post(`/progreso/leccion/${lessonId}`, {
         currentPage: page,
         completed,
-        score,
+        score: score,
         totalTimeSeconds: totalTimeSecondsValue,
       });
       if (showToasts) {
@@ -209,6 +190,61 @@ const nextDisabled =
   currentPageIndex === totalPages || 
   (isEditorPage && !activityCompleted);
     const formattedTotalTime = `${String(Math.floor(totalLessonTimeSeconds / 60)).padStart(2, '0')}:${String(totalLessonTimeSeconds % 60).padStart(2, '0')}`;
+
+
+const handleLessonCodeSubmit = async (code, resultadoAsistente) => {
+  const { score, completed, feedback } = resultadoAsistente;
+const scoreFinal = parseInt(score, 10) || 0;
+  if (completed) {
+    setActivityCompleted(true);
+    
+    try {
+      await saveProgress(currentPage, true, scoreFinal, totalLessonTimeSeconds, true);
+    } catch (err) {
+      console.error("Error al guardar el progreso:", err);
+    }
+
+    // 3. Mostramos el modal de éxito y ESPERAMOS a que el usuario presione "Continuar"
+    await Swal.fire({
+      title: '¡Lección Completada!',
+      html: `
+        <div style="text-align: left; font-family: 'Segoe UI', sans-serif;">
+          <p style="font-size: 18px; font-weight: bold; color: #2D3354;">Puntuación: <span style="color: #10b981;">${score}/100</span></p>
+          <div style="background-color: #F0F2F5; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1; max-height: 200px; overflow-y: auto; font-size: 14px; margin-top: 10px;">
+            <strong>Retroalimentación de la I.A:</strong><br/>
+            ${feedback}
+          </div>
+        </div>
+      `,
+      icon: 'success',
+      target: document.fullscreenElement || document.body,
+      confirmButtonColor: '#2D3354',
+      confirmButtonText: 'Continuar'
+    });
+
+   navigate('/inicio');
+
+  } else {
+    // Si no se completó, advertimos al estudiante pero no guardamos como completado
+    await Swal.fire({
+      title: 'Requiere correcciones',
+      html: `
+        <div style="text-align: left; font-family: 'Segoe UI', sans-serif;">
+          <p style="font-size: 18px; font-weight: bold; color: #ef4444;">Puntuación actual: <span>${score}/100</span></p>
+          <div style="background-color: #F87171; color: #7f1d1d; padding: 12px; border-radius: 8px; border: 1px solid #f87171; max-height: 200px; overflow-y: auto; font-size: 14px; margin-top: 10px;">
+            <strong>Sugerencias de la I.A para mejorar:</strong><br/>
+            ${feedback}
+          </div>
+        </div>
+      `,
+      icon: 'warning',
+      target: document.fullscreenElement || document.body,
+      confirmButtonColor: '#2D3354',
+      confirmButtonText: 'Entendido, ir a corregir'
+    });
+  }
+};
+
 
   return (
     <div className="lesson-player">

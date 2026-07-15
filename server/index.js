@@ -12,6 +12,7 @@ const projectRoutes = require('./routes/projectRoutes');
 const actividadRoutes = require('./routes/actividadRoutes');
 const entregasRoutes = require('./routes/entregasRoutes');
 const userRoutes = require('./routes/userRoutes');
+const asistenteRoutes = require('./routes/asistenteRoutes');
 const path = require('path');
 
 const app = express();
@@ -30,6 +31,7 @@ app.use(cors({
 app.use('/', authRoutes);
 app.use('/admin', adminRoutes);
 app.use('/progreso', progressRoutes);
+app.use('/asistente', asistenteRoutes);
 app.use('/leccion', lessonRoutes);
 app.use('/proyectos', projectRoutes);
 app.use('/actividades', actividadRoutes);

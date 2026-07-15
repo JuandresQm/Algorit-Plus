@@ -23,6 +23,65 @@ function CodeEditorView({ reviewMode: propsReviewMode = false, reviewData: props
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 const [segundosTranscurridos, setSegundosTranscurridos] = useState(0);
+
+const handleEntregaLeccion = async () => {
+/*   if (!lessonMode || !lessonData || !reviewData || !reviewMode) return; */
+
+  const confirmado = await Swal.fire({
+    title: '¿Deseas entregar tu solución?',
+    html: 'Se enviará el código para ser evaluado por la I.A.',
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonText: 'Sí, evaluar',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: '#2D3354',
+    cancelButtonColor: '#7a7a7a',
+    target: document.fullscreenElement || document.body,
+  });
+
+  if (!confirmado.isConfirmed) return;
+
+  Swal.fire({
+    title: 'Evaluando...',
+    text: 'Analizando el código y verificando el cumplimiento del enunciado.',
+    allowOutsideClick: false,
+    target: document.fullscreenElement || document.body,
+    didOpen: () => Swal.showLoading()
+  });
+
+  try {
+const enunciado = lessonData?.enunciado || reviewData?.actividad?.enunciado || "Enunciado no disponible";
+const titulo = lessonData?.titulo || reviewData?.actividad?.titulo || "Título no disponible";    
+const respuesta = await api.post('asistente/revisar/leccion', {
+      codigo: code,
+      enunciado: enunciado,
+      tituloLeccion: titulo
+    });
+
+    // Cerramos el loader de carga
+    Swal.close();
+
+    if (typeof onLessonSubmit === 'function') {
+      onLessonSubmit(code, respuesta.data);
+    }
+
+    setGrade(respuesta.data.score);
+    setObservaciones(respuesta.data.feedback);
+
+
+
+  } catch (error) {
+    console.error('Error al evaluar la lección:', error);
+    Swal.fire({
+      title: 'Error de evaluación',
+      text: error.response?.data?.message || 'No se pudo procesar la revisión con la I.A.',
+      icon: 'error',
+      target: document.fullscreenElement || document.body,
+      confirmButtonColor: '#2D3354'
+    });
+  }
+};
+
 // CRONÓMETRO DEL ESTUDIANTE (Independiente)
 useEffect(() => {
   if (!actividadStartTime) return;
@@ -53,12 +112,14 @@ const handleGradeSubmit = async () => {
         nota: numericGrade,
         observaciones: observaciones || ''
       });
-    await Swal.fire({ 
-      title: 'Calificación guardada', 
-      text: 'La entrega fue calificada correctamente.', 
-      icon: 'success', 
-      confirmButtonColor: '#2D3354' 
-    });
+  await Swal.fire({ 
+  title: 'Calificación guardada', 
+  text: 'La entrega fue calificada correctamente.', 
+  icon: 'success', 
+  confirmButtonText: "Aceptar",
+  confirmButtonColor: '#2D3354',
+  target: document.fullscreenElement || document.body 
+});
     navigate('/docente');
     if (typeof onCloseReview === 'function') onCloseReview();
   } catch (error) {
@@ -388,6 +449,9 @@ const [isSubmittingGrading, setIsSubmittingGrading] = useState(false);
 const onPrint = (value) => {
   setConsoleHistory(prev => [...prev, { type: 'output', text: String(value) }]);
 };
+
+
+
 
 const onReadRequest = (targetName) => {
   setConsoleHistory(prev => [...prev, { type: 'system', text: `Esperando entrada para: ${targetName}` }]);
@@ -813,50 +877,46 @@ useEffect(() => {
                 line-height: 1.6;
             }
 
-            .editor-content {
-                position: relative;
-                flex: 1;
-                overflow: hidden;
-            }
+           .editor-content {
+    position: relative;
+    flex: 1;
+    overflow-y: auto; 
+    background-color: #fff;
+}
 
-            .code-highlight {
-                position: absolute;
-                inset: 0;
-                padding: 10px 15px;
-                margin: 0;
-                font-size: 14px;
-                line-height: 1.6;
-                white-space: pre-wrap;
-                word-break: break-word;
-                overflow-wrap: break-word;
-                color: #0f172a;
-                pointer-events: none;
-            }
+            .code-highlight, .code-textarea {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    min-height: 100%;
+    padding: 10px 15px;
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    box-sizing: border-box;
+    border: none;
+}
+
+/* 3. Textarea ajustado */
+.code-textarea {
+    caret-color: #334155; /* Cursor visible */
+    background: transparent;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+    z-index: 2;
+    resize: none;
+    outline: none;
+    overflow: hidden;
+}
 
             .token.keyword { color: #2D3354; font-weight: 600; }
             .token.string { color: #16a34a; }
             .token.comment { color: rgba(100, 116, 139, 0.72); font-style: italic; }
 
-            .code-textarea {
-                position: relative;
-                flex: 1;
-                width: 100%;
-                height: 100%;
-                padding: 10px 15px;
-                border: none;
-                outline: none;
-                resize: none;
-                font-size: 14px;
-                line-height: 1.6;
-                caret-color: #334155;
-                background: transparent;
-                color: transparent;
-                -webkit-text-fill-color: transparent;
-                z-index: 1;
-                white-space: pre-wrap;
-                scrollbar-width: none;
-                -ms-overflow-style: none;
-            }
+            
 
             .code-textarea::selection {
                 background: rgba(59, 130, 246, 0.25);
@@ -1043,7 +1103,7 @@ useEffect(() => {
               {lessonMode && onLessonSubmit && (
       <button
         type="button"
-        onClick={() => onLessonSubmit(code, segundosTranscurridos)}
+        onClick={handleEntregaLeccion}
         style={{
           display: 'flex', alignItems: 'center', gap: '8px',
           backgroundColor: '#0b9448', color: 'white', border: 'none',
@@ -1179,7 +1239,7 @@ useEffect(() => {
   <div style={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '12px', marginBottom: '12px', position: 'relative' }}>
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
       <div style={{ fontSize: '12px', fontWeight: '700', color: '#4f5988', textTransform: 'uppercase' }}>Actividad asignada</div>
-      <button style={{ background: '#eef2ff', border: '1px solid #d1e3ff', color: '#2D3354', padding: '6px 10px', borderRadius: '8px', cursor: 'pointer' }}>Delegar a la IA</button>
+      <button onClick={handleEntregaLeccion} style={{ background: '#eef2ff', border: '1px solid #d1e3ff', color: '#2D3354', padding: '6px 10px', borderRadius: '8px', cursor: 'pointer' }}>Delegar a la I.A.</button>
     </div>
     
 

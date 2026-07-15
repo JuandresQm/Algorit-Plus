@@ -2,10 +2,12 @@
   "name": "algoritmas-root",
   "version": "1.0.0",
   "scripts": {
-    "server": "npm run start --prefix server",
-    "client": "npm run dev --prefix client",
-    "dev": "concurrently \"npm run server\" \"npm run client\""
-  },
+  "server": "npm run start --prefix server",
+  "client": "npm run dev --prefix client",
+  "client:build": "npm run build --prefix client",
+  "dev": "concurrently \"npm run server\" \"npm run client\"",
+  "build": "npm run client:build"
+},
   "devDependencies": {
     "concurrently": "^9.2.1"
   },

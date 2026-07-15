@@ -143,13 +143,12 @@ const LessonContent = ({ content, onActivityComplete, onLessonCodeSubmit }) => {
       width: '85vw',        
       marginLeft: isMobile ? '5px' : '-77.5px',   
       height: '90vh',
-      overflow: isMobile ? 'auto' : 'hidden',
+      overflow:'auto',
     }}>
-      <EditorCode 
+     <EditorCode 
         lessonMode={true}
         lessonData={block.settings}
-        onLessonSubmit={onLessonCodeSubmit}
-        onComplete={onActivityComplete}
+onLessonSubmit={(code, resultadoAsistente) => onLessonCodeSubmit(code, resultadoAsistente)}        onComplete={onActivityComplete}
       />
     </div>
   );

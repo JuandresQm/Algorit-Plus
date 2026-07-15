@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Settings, Check, Circle, Share2, Edit3, LogOut, Zap, Trash2, Search, ChevronLeft, ChevronRight } from 'lucide-react';import { Link, useNavigate } from 'react-router-dom';
+import { Plus, Check, Circle, Share2, Edit3, LogOut, Zap, Trash2, Search, ChevronLeft, ChevronRight, Bot, ChevronUp, ChevronDown } from 'lucide-react';import { Link, useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import api from '../api/axios';
 import LessonCharts from './LessonCharts';
@@ -70,6 +70,125 @@ const Inicio = ({ user, onLogout }) => {
   };
 
   const apiBase = api.defaults.baseURL || (import.meta.env.VITE_API_URL || '').replace(/\/$/, '') || window.location.origin;
+
+const handleIA = async () => {
+  const { value: resultadoSwal } = await Swal.fire({
+  title: 'Asistente de I.A.',
+  // 1. Cambiamos 'input' por 'html' para meter nuestro propio diseño
+  html: `
+    <div style="font-family: 'Jersey 20', sans-serif; text-align: left; width: 90%; margin: 0 auto;">
+      
+      <label style="font-weight: bold; display: block; margin-bottom: 8px; color: #2D3354;">Estructuras permitidas:</label>
+      <div style="display: grid; grid-template-cols: 1fr; gap: 8px; background-color: #F0F2F5; padding: 12px; border-radius: 8px; border: 1px solid #d1d5db; margin-bottom: 15px; max-height: 150px; overflow-y: auto;">
+        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;"><input style="accent-color: #2D3354;" type="checkbox" id="condicionales"> Estructuras Condicionales</label>
+        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;"><input style="accent-color: #2D3354;" type="checkbox" id="ciclos-repetitivos"> Ciclos Repetitivos</label>
+        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;"><input style="accent-color: #2D3354;" type="checkbox" id="subalgoritmos"> Subalgoritmos</label>
+        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;"><input style="accent-color: #2D3354;" type="checkbox" id="vectores"> Vectores</label>
+        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;"><input style="accent-color: #2D3354;" type="checkbox" id="matrices"> Matrices</label>
+        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;"><input style="accent-color: #2D3354;" type="checkbox" id="registros"> Registros</label>
+        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;"><input style="accent-color: #2D3354;" type="checkbox" id="arr-registros"> Arreglo de Registros</label>
+      </div>
+
+      <label style="font-weight: bold; display: block; margin-bottom: 8px; color: #2D3354;">¿De qué trata la actividad?</label>
+      <textarea id="peticion" placeholder="Escribe aquí tu petición (Ej: Crea el enunciado para que practiquen con tema de Fútbol)..." 
+        style="font-family: 'Jersey 20', sans-serif; font-size: 16px; background-color: #F0F2F5; border: 1px solid #d1d5db; border-radius: 8px; width: 100%; height: 100px; box-sizing: border-box; padding: 10px; resize: none;"></textarea>
+    </div>
+  `,
+  showCancelButton: true,
+  confirmButtonText: 'Generar',
+  cancelButtonText: 'Cancelar',
+  confirmButtonColor: '#2D3354',
+  cancelButtonColor: '#7a7a7a',
+  didOpen: (popup) => {
+    popup.style.boxShadow = '0 6px 0 #e5e5e5';
+    popup.style.border = '2px solid #e5e5e5';
+    popup.style.borderRadius = '16px';
+    popup.style.fontFamily = '"Jersey 20", sans-serif';
+  },
+
+  preConfirm: () => {
+    const peticionText = document.getElementById('peticion').value.trim();
+    
+
+    if (!peticionText) {
+      Swal.showValidationMessage('¡Debes escribir una instrucción para la I.A.!');
+      return false;
+    }
+
+    return {
+      peticion: peticionText,
+      estructuras: {
+        'Estructuras Condicionales': document.getElementById('condicionales').checked,
+        'Ciclos Repetitivos': document.getElementById('ciclos-repetitivos').checked,
+        'Subalgoritmos': document.getElementById('subalgoritmos').checked,
+        'Vectores': document.getElementById('vectores').checked,
+        'Matrices': document.getElementById('matrices').checked,
+        'Registros': document.getElementById('registros').checked,
+        'Arreglo de Registros': document.getElementById('arr-registros').checked,
+      }
+    };
+  }
+});
+
+if (!resultadoSwal) return;
+const { peticion, estructuras } = resultadoSwal;
+  // Loader mientras procesa la API
+  Swal.fire({
+    title: 'Procesando...',
+    text: 'Por favor, espera un momento.',
+    allowOutsideClick: false,
+    didOpen: (popup) => {
+      Swal.showLoading();
+      popup.style.boxShadow = '0 6px 0 #e5e5e5';
+      popup.style.border = '2px solid #e5e5e5';
+      popup.style.borderRadius = '16px';
+      popup.style.fontFamily = '"Jersey 20", sans-serif';
+    }
+  });
+
+  try {
+const respuesta = await api.post('/asistente/generar', { 
+    prompt: peticion, 
+    estructurasSeleccionadas: estructuras 
+  });
+    
+    if (respuesta.data && respuesta.data.titulo && respuesta.data.enunciado) {
+      setTitulo(respuesta.data.titulo);
+      setEnunciado(respuesta.data.enunciado);
+      
+      Swal.fire({
+        title: '¡Completado!',
+        text: 'Se han generado el título y el enunciado con éxito.',
+        icon: 'success',
+        confirmButtonText: 'Excelente',
+        confirmButtonColor: '#2D3354',
+        didOpen: (popup) => {
+          popup.style.boxShadow = '0 6px 0 #e5e5e5';
+          popup.style.border = '2px solid #e5e5e5';
+          popup.style.borderRadius = '16px';
+          popup.style.fontFamily = '"Jersey 20", sans-serif';
+        }
+      });
+    } else {
+      throw new Error('Formato de respuesta incorrecto');
+    }
+  } catch (error) {
+    console.error('Error con la API de Gemini:', error);
+    Swal.fire({
+      title: 'Error de I.A.',
+      text: error.response?.data?.message || 'No se pudo obtener una respuesta válida de la API.',
+      icon: 'error',
+      confirmButtonText: 'Aceptar',
+      confirmButtonColor: '#2D3354',
+      didOpen: (popup) => {
+        popup.style.boxShadow = '0 6px 0 #e5e5e5';
+        popup.style.border = '2px solid #e5e5e5';
+        popup.style.borderRadius = '16px';
+        popup.style.fontFamily = '"Jersey 20", sans-serif';
+      }
+    });
+  }
+};
 
   const profileAvatar = user?.avatar
     ? user.avatar.startsWith('http')
@@ -231,6 +350,8 @@ const Inicio = ({ user, onLogout }) => {
     }
   };
 
+
+
   const handleEditar = (actividad) => {
     setEditingId(actividad.id);
     setTitulo(actividad.titulo || '');
@@ -291,6 +412,7 @@ const Inicio = ({ user, onLogout }) => {
       });
     }
   };
+const [actividadAbiertaId, setActividadAbiertaId] = useState(null);
 
  const handleRevisar = (entrega) => {
   navigate('/editor/revision', { 
@@ -344,7 +466,12 @@ const Inicio = ({ user, onLogout }) => {
       
         <div style={styles.dashboardGrid(isMobile)}>
          <div style={styles.progressMap(isMobile)}>
-          <h2 style={styles.mainHeading}>{editingId ? 'Editar actividad' : 'Crear actividad'}</h2>
+
+
+          <div style={styles.container}> <h2 style={styles.mainHeading}>{editingId ? 'Editar actividad' : 'Crear actividad'}</h2>
+          <button  onClick={handleIA} style={styles.settingsBtn}>Delegar a la I.A. <Bot/></button> 
+          </div>
+          
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div style={styles.inputWrapper}>
               <input
@@ -411,24 +538,62 @@ const Inicio = ({ user, onLogout }) => {
       <p style={styles.emptyStateText}>Cargando actividades...</p>
     ) : actividadesFiltradas.length > 0 ? (
       <>
-        {actividadesPaginadas.map((actividad) => (
-          <div key={actividad.id} style={styles.moduleCard}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', gap: '12px', flexWrap: 'wrap' }}>
-              <div style={{ flex: 1 }}>
-                <h4 style={{ ...styles.activityTitle, fontSize: '16px', fontWeight: '600', margin: 0 }}>{actividad.titulo}</h4>
-                <p style={{ margin: '4px 0 0', color: '#666', fontSize: '14px' }}>{actividad.enunciado}</p>
-              </div>
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                <button type="button" onClick={() => handleEditar(actividad)} style={styles.iconButton} title="Editar actividad">
-                  <Edit3 size={16} />
-                </button>
-                <button type="button" onClick={() => handleEliminar(actividad.id)} style={styles.iconButtonDanger} title="Eliminar actividad">
-                  <Trash2 size={16} />
-                </button>
-              </div>
-            </div>
-          </div>
-        ))}
+        {actividadesPaginadas.map((actividad) => {
+  // Evaluamos de manera individual si ESTA tarjeta está abierta usando su id
+  const estaAbierta = actividadAbiertaId === actividad.id;
+
+  return (
+    <div key={actividad.id} style={styles.moduleCard}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', gap: '12px', flexWrap: 'wrap' }}>
+        <div style={{ flex: 1 }}>
+          <h4 style={{ ...styles.activityTitle, fontSize: '16px', fontWeight: '600', margin: 0 }}>
+            {actividad.titulo}
+          </h4>
+          
+          {/* El CSS de truncado recibe el estado individual de esta tarjeta */}
+          <p style={styles.estilosTruncado(estaAbierta)}>
+            {actividad?.enunciado}
+          </p>
+          
+          <button 
+            onClick={() => setActividadAbiertaId(estaAbierta ? null : actividad.id)}
+            style={{ 
+              background: 'none', 
+              border: 'none', 
+              color: '#2D3354', 
+              cursor: 'pointer', 
+              padding: 0,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px',
+              fontSize: '13px',
+              marginTop: '4px'
+            }}
+          >
+            {estaAbierta ? (
+              <>
+                Ver menos <ChevronUp size={14} />
+              </>
+            ) : (
+              <>
+                Ver más <ChevronDown size={14} />
+              </>
+            )}
+          </button>
+        </div>
+        
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <button type="button" onClick={() => handleEditar(actividad)} style={styles.iconButton} title="Editar actividad">
+            <Edit3 size={16} />
+          </button>
+          <button type="button" onClick={() => handleEliminar(actividad.id)} style={styles.iconButtonDanger} title="Eliminar actividad">
+            <Trash2 size={16} />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+})}
 
         {/* Paginación de Actividades */}
         <div style={styles.paginationRow}>
@@ -952,6 +1117,34 @@ height: isMobile ? '100%' : '100vh',
   paginationInfo: {
     color: '#475569',
     fontSize: '14px'
+  },container: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '100%'
   },
+  settingsBtn: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px', // Espacio entre el icono y el texto
+    background: '#2D3354',
+    color: 'white',
+    border: 'none',
+    borderRadius: '6px',
+    padding: '4px 8px', // Más chico
+    fontSize: '12px',    // Más chico
+    cursor: 'pointer'
+  },
+  estilosTruncado: (mostrarTodo) => ({
+  margin: '4px 0 0',
+  color: '#666',
+  fontSize: '14px',
+  textAlign: 'justify',
+  display: '-webkit-box',
+  WebkitLineClamp: mostrarTodo ? 'unset' : 3, 
+  WebkitBoxOrient: 'vertical',
+  overflow: 'hidden',
+})
+
 };
 export default Inicio;

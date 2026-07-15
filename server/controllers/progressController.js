@@ -51,7 +51,7 @@ function levelFromExp(exp) {
 
 const saveLessonProgress = async (req, res) => {
   try {
-    const { currentPage, completed = false, score = 0, totalTimeSeconds, elapsedSeconds} = req.body;
+    const { currentPage, completed = false, score = 0, totalTimeSeconds, elapsedSeconds } = req.body;
     const lessonId = req.params.id;
 
     const existingProgress = await UserProgress.findOne({
@@ -62,22 +62,25 @@ const saveLessonProgress = async (req, res) => {
       ? Number(currentPage)
       : (existingProgress?.currentPage || 1);
 
-    const normalizedCompleted = Boolean(completed);
-    const normalizedScore = Number.isFinite(Number(score)) ? Number(score) : (existingProgress?.score || 0);
-const normalizedTime = (typeof totalTimeSeconds === 'number' && !isNaN(totalTimeSeconds)) ? totalTimeSeconds : 0;
-    // If not completing, just upsert progress and return
-    if (!normalizedCompleted) {
-      const savedProgress = await UserProgress.upsert({
-        userId: req.user.id,
-        lessonId,
-        completed: normalizedCompleted,
-        score: normalizedScore,
-        currentPage: normalizedPage,
-        totalTimeSeconds: normalizedTime,
-        completionDate: existingProgress?.completionDate || null
-      }, { returning: true });
 
-      const progressEntry = Array.isArray(savedProgress) ? savedProgress[0] : savedProgress;
+
+    const normalizedScore = Number.isFinite(Number(score)) ? Number(score) : (existingProgress?.score || 0);
+    const isNowCompleted = (normalizedScore >= 56);    
+    const normalizedTime = (typeof totalTimeSeconds === 'number' && !isNaN(totalTimeSeconds)) ? totalTimeSeconds : 0;
+
+    const savedProgress = await UserProgress.upsert({
+      userId: req.user.id,
+      lessonId,
+      completed: isNowCompleted, 
+      score: Math.max(normalizedScore, existingProgress?.score || 0), 
+      currentPage: normalizedPage,
+      totalTimeSeconds: normalizedTime,
+      completionDate: isNowCompleted && !existingProgress?.completionDate ? new Date() : existingProgress?.completionDate
+    }, { returning: true });
+
+    const progressEntry = Array.isArray(savedProgress) ? savedProgress[0] : savedProgress;
+
+    if (!isNowCompleted) {
       return res.json({
         message: 'Progreso guardado correctamente',
         progress: {
@@ -89,14 +92,14 @@ const normalizedTime = (typeof totalTimeSeconds === 'number' && !isNaN(totalTime
         }
       });
     }
-
-    // Completing the lesson: delegate awarding and return unlocked achievements
     try {
       const { awardExpForLessonCompletion } = require('../utils/exp');
       const awardResult = await awardExpForLessonCompletion(req.user.id, Number(lessonId), Number(normalizedTime));
+      
       return res.json({
         message: 'Progreso completado y EXP asignada correctamente',
         lessonId,
+        score: progressEntry.score, 
         awardedExp: awardResult.awardedExp,
         totalExp: awardResult.newTotalExp,
         nivel: awardResult.newLevel,
