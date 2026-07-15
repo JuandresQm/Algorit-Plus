@@ -22,7 +22,7 @@ const forgotPassword = async (req, res) => {
         const resetUrl = `${process.env.FRONT_URL}/recuperar/${resetToken}`;
 
         await transporter.sendMail({
-            from: '"Algorit+ Soporte" <tu_correo@gmail.com>',
+            from: `"Algorit+ Soporte" <${process.env.EMAIL_USER}>`,
             to: user.email,
             subject: "Recuperar Contraseña - Algorit+",
             html: `<b>Hola, ${user.username}</b>
@@ -107,7 +107,7 @@ const register = async (req, res) => {
         });
 
          transporter.sendMail({
-            from: '"Algorit+ Soporte" <tu_correo@gmail.com>',
+            from: `"Algorit+ Soporte" <${process.env.EMAIL_USER}>`,
             to: newUser.email,
             subject: "Registro exitoso - Algorit+",
             html: `<b>Hola, ${newUser.username}</b>
